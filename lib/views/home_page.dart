@@ -21,17 +21,18 @@ class HomePage extends StatelessWidget {
             'Match Matter',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          backgroundColor: theme.colorScheme.inversePrimary,
+          backgroundColor: theme.colorScheme.primaryContainer,
+          elevation: 0
         ),
         body: Consumer<BottomNavigationProvider>(
           builder: (context, provider, child) {
-            final List<Widget> _pages = [
+            final List<Widget> pages = [
               const TeamsPage(),
               const MatchesPage(),
               const ContactsPage(),
               const MePage(),
             ];
-            return _pages[provider.currentIndex];
+            return pages[provider.currentIndex];
           },
         ),
         bottomNavigationBar: Consumer<BottomNavigationProvider>(
