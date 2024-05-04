@@ -31,33 +31,33 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
- Future<void> _registerAccount(BuildContext context) async {
+  Future<void> _registerAccount(BuildContext context) async {
   if (_formKey.currentState!.validate()) {
     try {
-      final UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      print('Creating user...');
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
 
       final User? user = userCredential.user;
       if (user != null) {
+        print('User created, updating user data...');
         await UserDatabaseService(uid: user.uid).updateUserData(
           _nameController.text,
           _phoneController.text,
         );
-
-        Navigator.of(context).pop();
+        print('User data updated, navigating to home page...');
+        Navigator.of(context).pushReplacementNamed('/');
       }
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The password provided is too weak.')));
-      } else if (e.code == 'email-already-in-use') {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The account already exists for that email.')));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      print('Failed with error code: ${e.code}');
+      print(e.message);
+      // ...
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      print('Failed with error: $e');
+      // ...
     }
   }
 }
@@ -111,7 +111,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   controller: _confirmPasswordController,
                   decoration:
                       const InputDecoration(labelText: 'Confirm Password'),
-                                    obscureText: true,
+                  obscureText: true,
                   validator: (value) {
                     if (value != _passwordController.text) {
                       return 'Passwords do not match';
@@ -144,4 +144,3 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 }
-

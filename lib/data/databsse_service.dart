@@ -13,7 +13,8 @@ class UserModel {
     required this.createdAt,
   });
 
-  factory UserModel.fromDocumentSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory UserModel.fromDocumentSnapshot(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
     return UserModel(
       uid: doc.id,
       name: doc['name'],
@@ -32,20 +33,26 @@ class UserDatabaseService {
       FirebaseFirestore.instance.collection('users');
 
   Future<UserModel> updateUserData(String name, String phoneNumber) async {
-    await _userCollection.doc(uid).set({
-      'name': name,
-      'phoneNumber': phoneNumber,
-      'createdAt': Timestamp.now(),
-    });
+    try {
+      await _userCollection.doc(uid).set({
+        'name': name,
+        'phoneNumber': phoneNumber,
+        'createdAt': Timestamp.now(),
+      });
 
-    return _getUserData();
+      return await _getUserData();
+    } catch (e) {
+      print('Error updating user data: $e');
+      throw Exception('Failed to update user data');
+    }
   }
 
   Future<UserModel> _getUserData() async {
-  final DocumentSnapshot<Object?> docSnapshot = await _userCollection.doc(uid).get();
-  final DocumentSnapshot<Map<String, dynamic>> doc = docSnapshot as DocumentSnapshot<Map<String, dynamic>>;
+    final DocumentSnapshot<Object?> docSnapshot =
+        await _userCollection.doc(uid).get();
+    final DocumentSnapshot<Map<String, dynamic>> doc =
+        docSnapshot as DocumentSnapshot<Map<String, dynamic>>;
 
-  return UserModel.fromDocumentSnapshot(doc);
-}
-
+    return UserModel.fromDocumentSnapshot(doc);
+  }
 }
