@@ -8,7 +8,8 @@ class AuthService {
   // 注册新用户（邮箱+密码）
   Future<UserCredential?> signUpWithEmail(String email, String password) async {
     try {
-      return await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      return await _auth.createUserWithEmailAndPassword(
+          email: email, password: password);
     } catch (e) {
       rethrow;
     }
@@ -143,5 +144,35 @@ class AuthService {
 
   Future<UserCredential> signInWithCredential(AuthCredential credential) async {
     return await _auth.signInWithCredential(credential);
+  }
+
+  Future<UserCredential> signUpWithCredential(AuthCredential credential) async {
+    try {
+      return await _auth.signInWithCredential(credential);
+    } catch (e) {
+      // Handle any errors that occur during the sign-up process
+      rethrow;
+    }
+  }
+
+// 更新用户的手机号
+  Future<void> updateUserPhoneNumber(User? user, String phoneNumber) async {
+    if (user != null) {
+      // Verify the phone number and get the PhoneAuthCredential
+      final verificationCompleter = Completer<PhoneAuthCredential>();
+      await _auth.verifyPhoneNumber(
+        phoneNumber: '+65$phoneNumber',
+        verificationCompleted: (credential) {
+          verificationCompleter.complete(credential);
+        },
+        verificationFailed: (e) {
+          verificationCompleter.completeError(e);
+        },
+        codeSent: (_, __) {},
+        codeAutoRetrievalTimeout: (_) {},
+      );
+      final phoneCredential = await verificationCompleter.future;
+      await user.updatePhoneNumber(phoneCredential);
+    }
   }
 }
