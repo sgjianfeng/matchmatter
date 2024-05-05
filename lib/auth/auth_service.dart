@@ -15,6 +15,15 @@ class AuthService {
     }
   }
 
+  Future<UserCredential?> signInWithEmail(String email, String password) async {
+    try {
+      return await _auth.signInWithEmailAndPassword(email: email, password: password);
+    } on FirebaseAuthException {
+      // Handle any errors that occur during the sign-in process
+      rethrow;
+    }
+  }
+
   // 使用手机号注册新用户
   Future<UserCredential?> signUpWithPhoneNumber(
     String phoneNumber,

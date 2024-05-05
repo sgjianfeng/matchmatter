@@ -40,19 +40,27 @@ class UserDatabaseService {
         'createdAt': Timestamp.now(),
       });
 
-      return await _getUserData();
+      return await getUserData();
     } catch (e) {
       print('Error updating user data: $e');
       throw Exception('Failed to update user data');
     }
   }
 
-  Future<UserModel> _getUserData() async {
+  Future<UserModel> getUserData() async {
     final DocumentSnapshot<Object?> docSnapshot =
         await _userCollection.doc(uid).get();
-    final DocumentSnapshot<Map<String, dynamic>> doc =
-        docSnapshot as DocumentSnapshot<Map<String, dynamic>>;
-
-    return UserModel.fromDocumentSnapshot(doc);
+    if (docSnapshot.exists) {
+      // 确保文档存在
+      final DocumentSnapshot<Map<String, dynamic>> doc =
+          docSnapshot as DocumentSnapshot<Map<String, dynamic>>;
+      return UserModel.fromDocumentSnapshot(doc);
+    } else {
+      // 处理文档不存在的情况，例如抛出错误或返回空用户
+      //throw Exception('Document does not exist.');
+      // 返回一个空的 UserModel
+      return UserModel(
+          uid: '', name: '', phoneNumber: '', createdAt: Timestamp.now());
+    }
   }
 }

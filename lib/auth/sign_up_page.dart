@@ -20,6 +20,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final AuthService _authService = AuthService();
+  String? _emailError;
 
   @override
   void dispose() {
@@ -32,36 +33,57 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   Future<void> _registerAccount(BuildContext context) async {
-  if (_formKey.currentState!.validate()) {
-    try {
-      print('Creating user...');
-      final UserCredential userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
-
-      final User? user = userCredential.user;
-      if (user != null) {
-        print('User created, updating user data...');
-        await UserDatabaseService(uid: user.uid).updateUserData(
-          _nameController.text,
-          _phoneController.text,
+    if (_formKey.currentState!.validate()) {
+      try {
+        print('Creating user...');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Creating user...')),
         );
-        print('User data updated, navigating to home page...');
-        Navigator.of(context).pushReplacementNamed('/');
+        final UserCredential userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
+
+        final User? user = userCredential.user;
+        if (user != null) {
+          print('User created, updating user data...');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('User created, updating user data...')),
+          );
+          await UserDatabaseService(uid: user.uid).updateUserData(
+            _nameController.text,
+            _phoneController.text,
+          );
+          print('User data updated, navigating to home page...');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('User data updated, navigating to home page...')),
+          );
+          Navigator.of(context).pushReplacementNamed('/');
+        }
+      } on FirebaseAuthException catch (e) {
+        print('Failed with error code: ${e.code}');
+        print(e.message);
+        if (e.code == 'email-already-in-use') {
+          setState(() {
+            _emailError = 'This email is already in use.';
+          });
+           _formKey.currentState!.validate(); // 触发表单的重新验证
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed with error code: ${e.code}')),
+        );
+        // ...
+      } catch (e) {
+        print('Failed with error: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed with error: $e')),
+        );
+        // ...
       }
-    } on FirebaseAuthException catch (e) {
-      print('Failed with error code: ${e.code}');
-      print(e.message);
-      // ...
-    } catch (e) {
-      print('Failed with error: $e');
-      // ...
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -95,9 +117,15 @@ class _SignUpPageState extends State<SignUpPage> {
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(labelText: 'Email'),
-                  validator: (value) => value != null && !value.contains('@')
-                      ? 'Enter a valid email'
-                      : null,
+                  validator: (value) {
+                    if (value != null && !value.contains('@')) {
+                      return 'Enter a valid email';
+                    }
+                    if (_emailError != null) {
+                      return _emailError;
+                    }
+                    return null;
+                  },
                 ),
                 TextFormField(
                   controller: _passwordController,

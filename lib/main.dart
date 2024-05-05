@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
                   return const HomePage(); // 使用导入的 HomePage 小部件
                 } else if (snapshot.data == null) {
                   // 如果用户未登录,导航到登录页面
-                  return const LoginPage(); // 使用导入的 LoginPage 小部件
+                  return LoginPage(); // 使用导入的 LoginPage 小部件
                 } else {
                   // 处理其他情况,例如显示加载指示器
                   return const CircularProgressIndicator();
@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
               },
             ),
             '/signup': (context) => const SignUpPage(), // 添加 /signup 路由
-            '/login': (context) => const LoginPage(), // 添加 /login 路由
+            '/login': (context) => LoginPage(), // 添加 /login 路由
       },
     );
   }
