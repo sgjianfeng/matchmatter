@@ -37,7 +37,7 @@ class _SignUpPageState extends State<SignUpPage> {
       try {
         print('Creating user...');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Creating user...')),
+          const SnackBar(content: Text('Creating user...')),
         );
         final UserCredential userCredential =
             await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -49,7 +49,7 @@ class _SignUpPageState extends State<SignUpPage> {
         if (user != null) {
           print('User created, updating user data...');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('User created, updating user data...')),
+            const SnackBar(content: Text('User created, updating user data...')),
           );
           await UserDatabaseService(uid: user.uid).updateUserData(
             _nameController.text,
@@ -57,7 +57,7 @@ class _SignUpPageState extends State<SignUpPage> {
           );
           print('User data updated, navigating to home page...');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
                 content: Text('User data updated, navigating to home page...')),
           );
           Navigator.of(context).pushReplacementNamed('/');

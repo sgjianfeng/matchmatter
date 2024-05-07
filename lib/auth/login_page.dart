@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_service.dart';
 
 class LoginPage extends StatelessWidget {
-  LoginPage({Key? key}) : super(key: key);
+  LoginPage({super.key});
 
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -22,7 +22,7 @@ class LoginPage extends StatelessWidget {
           key: _formKey,
           child: ListView(
             children: [
-              SizedBox(height: 50.0), // Add some space
+              const SizedBox(height: 50.0), // Add some space
               TextFormField(
                 controller: _emailController,
                 validator: (value) {
@@ -35,7 +35,7 @@ class LoginPage extends StatelessWidget {
                   labelText: 'Email',
                 ),
               ),
-              SizedBox(height: 20.0), // Add some space
+              const SizedBox(height: 20.0), // Add some space
               TextFormField(
                 controller: _passwordController,
                 validator: (value) {
@@ -49,7 +49,7 @@ class LoginPage extends StatelessWidget {
                 ),
                 obscureText: true,
               ),
-              SizedBox(height: 30.0), // Add some space
+              const SizedBox(height: 30.0), // Add some space
               ElevatedButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
@@ -70,7 +70,7 @@ class LoginPage extends StatelessWidget {
                 },
                 child: const Text('Sign In'),
               ),
-              SizedBox(height: 20.0), // Add some space
+              const SizedBox(height: 20.0), // Add some space
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

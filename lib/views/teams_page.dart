@@ -18,18 +18,19 @@ class TeamsPage extends StatelessWidget {
       'LIU QINGDONG 籍赛群',
     ];
 
-    return Material(
-      child: ListView.builder(
-        itemCount: teams.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            leading: CircleAvatar(
-              child: Text('${index + 1}'),
-            ),
-            title: Text(teams[index]),
-          );
-        },
-      ),
+    return ListView.builder(
+      itemCount: teams.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          leading: CircleAvatar(
+            child: Text('${index + 1}'),
+          ),
+          title: Text(teams[index]),
+        );
+      },
     );
   }
 }
+
+
+

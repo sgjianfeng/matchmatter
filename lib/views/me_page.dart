@@ -14,7 +14,7 @@ class MePage extends StatelessWidget {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacementNamed(context, '/login');
       });
-      return Material(
+      return const Material(
         child: Center(
           child: CircularProgressIndicator(), // 显示加载中指示器
         ),
@@ -27,7 +27,7 @@ class MePage extends StatelessWidget {
           future: UserDatabaseService(uid: user.uid).getUserData(), // 确保传递uid
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return CircularProgressIndicator(); // 数据加载时显示加载指示器
+              return const CircularProgressIndicator(); // 数据加载时显示加载指示器
             }
             if (snapshot.hasError) {
               return Text('无法加载用户数据: ${snapshot.error}'); // 显示错误信息
