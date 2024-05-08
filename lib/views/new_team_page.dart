@@ -15,14 +15,28 @@ class _NewTeamPageState extends State<NewTeamPage> {
     "fion ang prudential",
     "Angela"
   ]; // Example contacts
-  List<bool> selectedContacts =
-      List.generate(5, (index) => false); // Tracks selection
 
-  @override
+  final TextEditingController _teamIdController = TextEditingController();
+  final TextEditingController _teamNameController = TextEditingController();
+  final TextEditingController _teamTagController = TextEditingController();
+
+  List<bool> selectedContacts = List.generate(5, (index) => false); // Tracks selection
+  bool _isSearching = false; // Tracks if the search is active
+  final TextEditingController _searchController = TextEditingController();
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchController.clear(); // Clear search when closing
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, 
+      //backgroundColor: Colors.transparent,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -32,9 +46,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () {
-              // Implement search functionality
-            },
+            onPressed: _toggleSearch,
           ),
           IconButton(
             icon: const Icon(Icons.done),
@@ -44,28 +56,97 @@ class _NewTeamPageState extends State<NewTeamPage> {
           ),
         ],
       ),
-      body: Container(
-        color: Colors.white,
-        height: MediaQuery.of(context).size.height * 0.9, // Adjust the fraction as needed
-        child: ListView.builder(
-          itemCount: contacts.length,
-          itemBuilder: (context, index) {
-            return ListTile(
-              leading: CircleAvatar(
-                child: Text(contacts[index][0]), // Display the first letter
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(1.0),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '添加团队信息',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _teamIdController,
+                      decoration: const InputDecoration(
+                        labelText: 'Team ID',
+                        border: OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0), // Adjusted padding
+                      ),
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _teamNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Team Name',
+                        border: OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0), // Adjusted padding
+                      ),
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _teamTagController,
+                      decoration: const InputDecoration(
+                        labelText: 'Team Tag',
+                        border: OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0), // Adjusted padding
+                      ),
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    //const SizedBox(height: 20),
+                  ],
+                ),
               ),
-              title: Text(contacts[index]),
-              trailing: Checkbox(
-                value: selectedContacts[index],
-                onChanged: (bool? value) {
-                  setState(() {
-                    selectedContacts[index] = value!;
-                  });
+            ),
+          ),
+          if (_isSearching)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  labelText: 'Search Contacts',
+                  border: OutlineInputBorder(),
+                  suffixIcon: Icon(Icons.search),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0), // Adjusted padding
+                ),
+                onChanged: (value) {
+                  // Implement your search logic here
                 },
               ),
-            );
-          },
-        ),
+            ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: contacts.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  leading: CircleAvatar(
+                    child: Text(contacts[index][0]), // Display the first letter
+                  ),
+                  title: Text(contacts[index]),
+                  trailing: Checkbox(
+                    value: selectedContacts[index],
+                    onChanged: (bool? value) {
+                      setState(() {
+                        selectedContacts[index] = value!;
+                      });
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
