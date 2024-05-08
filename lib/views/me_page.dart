@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:matchmatter/data/databsse_service.dart'; // 假设这是正确的路径
+import 'package:matchmatter/data/user.dart'; // 假设这是正确的路径
 
 class MePage extends StatelessWidget {
   const MePage({super.key});

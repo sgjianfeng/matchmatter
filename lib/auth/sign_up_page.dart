@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:matchmatter/data/databsse_service.dart';
+import 'package:matchmatter/data/user.dart';
 import 'auth_service.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -54,6 +54,7 @@ class _SignUpPageState extends State<SignUpPage> {
           await UserDatabaseService(uid: user.uid).updateUserData(
             _nameController.text,
             _phoneController.text,
+            _emailController.text, 
           );
           print('User data updated, navigating to home page...');
           ScaffoldMessenger.of(context).showSnackBar(
