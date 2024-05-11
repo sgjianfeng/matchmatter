@@ -65,11 +65,11 @@ class _NewTeamPageState extends State<NewTeamPage> {
   }
 
   void _filterContacts(String searchTerm) {
-    List<Contact> _results = [];
+    List<Contact> results = [];
     if (searchTerm.isEmpty) {
-      _results = contacts;
+      results = contacts;
     } else {
-      _results = contacts
+      results = contacts
           .where((contact) =>
               contact.name.toLowerCase().contains(searchTerm.toLowerCase()) ||
               contact.email.toLowerCase().contains(searchTerm.toLowerCase()))
@@ -77,7 +77,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
     }
 
     setState(() {
-      filteredContacts = _results;
+      filteredContacts = results;
     });
   }
 
@@ -108,7 +108,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
               if (_teamIdController.text.isEmpty ||
                   _teamNameController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                  const SnackBar(
                     content: Text('Please fill in all the required fields.'),
                     backgroundColor: Colors.red,
                   ),
@@ -120,7 +120,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
               bool isUnique = await checkTeamIdUnique(_teamIdController.text);
               if (!isUnique) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                  const SnackBar(
                     content: Text(
                         'Team ID is already taken. Please choose another one.'),
                     backgroundColor: Colors.red,
@@ -173,7 +173,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                       decoration: const InputDecoration(
                         labelText: 'Team ID',
                         border: OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
+                        contentPadding: EdgeInsets.symmetric(
                             vertical: 10.0,
                             horizontal: 10.0), // Adjusted padding
                       ),
@@ -185,7 +185,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                       decoration: const InputDecoration(
                         labelText: 'Team Name',
                         border: OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
+                        contentPadding: EdgeInsets.symmetric(
                             vertical: 10.0,
                             horizontal: 10.0), // Adjusted padding
                       ),
@@ -197,7 +197,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                       decoration: const InputDecoration(
                         labelText: 'Team Tag',
                         border: OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
+                        contentPadding: EdgeInsets.symmetric(
                             vertical: 10.0,
                             horizontal: 10.0), // Adjusted padding
                       ),
