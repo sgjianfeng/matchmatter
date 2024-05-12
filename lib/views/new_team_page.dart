@@ -103,7 +103,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
             onPressed: _toggleSearch,
           ),
           IconButton(
-            icon: const Icon(Icons.done),
+            icon: const Icon(Icons.navigate_next),
             onPressed: () async {
               if (_teamIdController.text.isEmpty ||
                   _teamNameController.text.isEmpty) {

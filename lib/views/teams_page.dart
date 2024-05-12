@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:matchmatter/data/team.dart';
 
 class TeamsPage extends StatefulWidget {
   const TeamsPage({super.key});
@@ -10,32 +11,33 @@ class TeamsPage extends StatefulWidget {
 
 class _TeamsPageState extends State<TeamsPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  late Future<List<String>> _teamsFuture;
 
   @override
   void initState() {
     super.initState();
-    _teamsFuture = _loadTeams();
   }
 
-  Future<List<String>> _loadTeams() async {
-    try {
-      QuerySnapshot querySnapshot = await _firestore.collection('teams').get();
-      return querySnapshot.docs.map((doc) => doc['name'] as String).toList();
-    } catch (e) {
-      print('Error loading teams: $e');
-      return [];
-    }
+  Stream<List<Team>> _loadTeamsStream() {
+    return _firestore
+        .collection('teams')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+              return Team(
+                id: doc.id,
+                name: data['name'] ?? 'Unknown Team',
+                tags: List<String>.from(data['tags'] ?? []),
+                roles: {}, // 这里暂时不加载角色数据
+              );
+            }).toList());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Teams'),
-      ),
-      body: FutureBuilder<List<String>>(
-        future: _teamsFuture,
+      //appBar: AppBar(title: Text('Teams')),
+      body: StreamBuilder<List<Team>>(
+        stream: _loadTeamsStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -46,11 +48,13 @@ class _TeamsPageState extends State<TeamsPage> {
             return ListView.builder(
               itemCount: teams.length,
               itemBuilder: (context, index) {
+                final team = teams[index];
                 return ListTile(
                   leading: CircleAvatar(
                     child: Text('${index + 1}'),
                   ),
-                  title: Text(teams[index]),
+                  title: Text(team.name),
+                  subtitle: Text(team.tags.join(', ')), // 显示标签
                 );
               },
             );

@@ -61,8 +61,7 @@ class CreateTeamSummaryPage extends StatelessWidget {
       // 延迟后导航回团队列表
       await Future.delayed(const Duration(seconds: 1));
       //Navigator.pop(context); // 导航回团队列表页
-      // ignore: use_build_context_synchronously
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const TeamsPage()));
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
       // 处理错误
       if (kDebugMode) {
@@ -85,8 +84,8 @@ class CreateTeamSummaryPage extends StatelessWidget {
             Text('Create Team Summary', style: theme.textTheme.headlineSmall),
         actions: [
           IconButton(
-            icon:
-                const Icon(Icons.done_all_rounded), // Replace with your desired icon
+            icon: const Icon(
+                Icons.done_rounded), // Replace with your desired icon
             onPressed: () {
               _createTeamInFirestore(context);
             },
@@ -184,8 +183,8 @@ class CreateTeamSummaryPage extends StatelessWidget {
       leading: leading != null ? Icon(leading) : null,
       title: Text(title, style: theme.textTheme.bodyLarge),
       subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0), // 调整垂直内间距为0
+      contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16.0, vertical: 0), // 调整垂直内间距为0
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:matchmatter/auth/sign_up_page.dart';
+import 'package:matchmatter/views/teams_page.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
@@ -51,6 +52,7 @@ class MyApp extends StatelessWidget {
             ),
             '/signup': (context) => const SignUpPage(), // 添加 /signup 路由
             '/login': (context) => LoginPage(), // 添加 /login 路由
+            '/teams': (context) => const TeamsPage(), // 添加 /teams 路由
       },
     );
   }
