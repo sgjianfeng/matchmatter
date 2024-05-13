@@ -15,18 +15,18 @@ class HomePage extends StatelessWidget {
   Route<dynamic> _generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case '/teams':
-        return MaterialPageRoute(builder: (_) => TeamsPage());
+        return MaterialPageRoute(builder: (_) => const TeamsPage());
       case '/matches':
-        return MaterialPageRoute(builder: (_) => MatchesPage());
+        return MaterialPageRoute(builder: (_) => const MatchesPage());
       case '/contacts':
-        return MaterialPageRoute(builder: (_) => ContactsPage());
+        return MaterialPageRoute(builder: (_) => const ContactsPage());
       case '/me':
-        return MaterialPageRoute(builder: (_) => MePage());
+        return MaterialPageRoute(builder: (_) => const MePage());
       case '/teamDetail':
         final team = settings.arguments as Team;
         return MaterialPageRoute(builder: (_) => TeamPage(team: team));
       default:
-        return MaterialPageRoute(builder: (_) => TeamsPage());
+        return MaterialPageRoute(builder: (_) => const TeamsPage());
     }
   }
 

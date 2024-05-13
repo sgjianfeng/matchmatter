@@ -31,7 +31,7 @@ class MatchesPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Matches'),
+        title: const Text('Matches'),
       ),
       body: ListView.builder(
         itemCount: matches.length,

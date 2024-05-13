@@ -6,7 +6,7 @@ import '../providers/bottom_navigation_provider.dart';
 class TeamPage extends StatefulWidget {
   final Team team;
 
-  const TeamPage({Key? key, required this.team}) : super(key: key);
+  const TeamPage({super.key, required this.team});
 
   @override
   _TeamPageState createState() => _TeamPageState();
@@ -21,9 +21,9 @@ class _TeamPageState extends State<TeamPage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
-          title: Text(widget.team.name, style: TextStyle(color: Colors.black)),
-          iconTheme: IconThemeData(color: Colors.black),
-          bottom: TabBar(
+          title: Text(widget.team.name, style: const TextStyle(color: Colors.black)),
+          iconTheme: const IconThemeData(color: Colors.black),
+          bottom: const TabBar(
             labelColor: Colors.black,
             indicatorSize: TabBarIndicatorSize.label,
             indicatorColor: Colors.purple,
@@ -48,7 +48,7 @@ class _TeamPageState extends State<TeamPage> {
             Provider.of<BottomNavigationProvider>(context, listen: false)
                 .setCurrentIndex(index);
           },
-          items: [
+          items: const [
             BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Teams'),
             BottomNavigationBarItem(
                 icon: Icon(Icons.sports_soccer), label: 'Matches'),
@@ -65,7 +65,7 @@ class _TeamPageState extends State<TeamPage> {
     return ListView(
       children: [
         ListTile(title: Text('Meeting details for ${widget.team.name}')),
-        ...widget.team.tags.map((tag) => ListTile(title: Text(tag))).toList(),
+        ...widget.team.tags.map((tag) => ListTile(title: Text(tag))),
         _buildMessageComposer(),
       ],
     );
@@ -90,7 +90,7 @@ class _TeamPageState extends State<TeamPage> {
             ),
           ),
           IconButton(
-            icon: Icon(Icons.send, color: Colors.blue),
+            icon: const Icon(Icons.send, color: Colors.blue),
             onPressed: () {},
           ),
         ],
@@ -112,6 +112,6 @@ class _TeamPageState extends State<TeamPage> {
   }
 
   Widget _buildAppsTab() {
-    return Center(child: Text('Apps content goes here'));
+    return const Center(child: Text('Apps content goes here'));
   }
 }

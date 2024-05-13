@@ -27,7 +27,7 @@ class ContactsPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Contacts'),
+        title: const Text('Contacts'),
       ),
       body: ListView.builder(
         itemCount: contacts.length,

@@ -17,8 +17,8 @@ class _TeamsPageState extends State<TeamsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 60), // 根据需要调整此值
+      builder: (BuildContext context) => const Padding(
+        padding: EdgeInsets.only(top: 60), // 根据需要调整此值
         child: NewTeamPage(),
       ),
       backgroundColor: Colors.transparent, // 设置背景透明以展现内部Padding效果
@@ -27,12 +27,12 @@ class _TeamsPageState extends State<TeamsPage> {
 
   PopupMenuButton<String> _buildPopupMenu(BuildContext context) {
     return PopupMenuButton<String>(
-      icon: Padding(
+      icon: const Padding(
         padding: EdgeInsets.only(
             right: 20), // Set the left padding to adjust the position
         child: Icon(Icons.menu),
       ),
-      offset: Offset(0, 38), // Adjust the offset to move the menu downwards
+      offset: const Offset(0, 38), // Adjust the offset to move the menu downwards
       onSelected: (String value) {
         switch (value) {
           case 'NewTeam':
@@ -62,7 +62,7 @@ class _TeamsPageState extends State<TeamsPage> {
         .collection('teams')
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) {
-              Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+              Map<String, dynamic> data = doc.data();
               return Team(
                 id: doc.id,
                 name: data['name'] ?? 'Unknown Team',
@@ -94,7 +94,7 @@ class _TeamsPageState extends State<TeamsPage> {
     return Scaffold(
       //appBar: AppBar(title: Text('Teams')),
       appBar: AppBar(
-        title: Text('Teams'),
+        title: const Text('Teams'),
         actions: <Widget>[
           _buildPopupMenu(context),
         ],
@@ -118,7 +118,7 @@ class _TeamsPageState extends State<TeamsPage> {
                   ),
                   title: Text(team.name),
                   subtitle: Text(team.tags.join(', ')), // 显示标签
-                  trailing: Icon(Icons.arrow_forward_ios),
+                  trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () {
                     _navigateToTeamDetail(context, team);
                   },

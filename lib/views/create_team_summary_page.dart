@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:matchmatter/data/contact.dart';
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
-import 'teams_page.dart';
 // 确保导入您的主题配置文件
 
 class CreateTeamSummaryPage extends StatelessWidget {

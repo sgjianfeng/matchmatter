@@ -23,7 +23,7 @@ class MePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Me'),
+        title: const Text('Me'),
       ),
       body: Center(
         child: FutureBuilder<UserModel>(
