@@ -5,6 +5,13 @@ class BottomNavigationProvider extends ChangeNotifier {
   final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>(); // 添加此行
 
+  List<GlobalKey<NavigatorState>> navigatorKeys = [
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+  ];
+
   int get currentIndex => _currentIndex;
 
   void setCurrentIndex(int index) {

@@ -50,24 +50,76 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  // void _selectTab(int index, BuildContext context) {
+  //   if (index !=
+  //       Provider.of<BottomNavigationProvider>(context, listen: false)
+  //           .currentIndex) {
+  //     Provider.of<BottomNavigationProvider>(context, listen: false)
+  //         .setCurrentIndex(index);
+  //     final routeNames = ['/teams', '/matches', '/contacts', '/me'];
+  //     if (Provider.of<BottomNavigationProvider>(context, listen: false)
+  //             .navigatorKey
+  //             .currentState !=
+  //         null) {
+  //       Provider.of<BottomNavigationProvider>(context, listen: false)
+  //           .navigatorKey
+  //           .currentState!
+  //           .pushNamedAndRemoveUntil(
+  //               routeNames[index], ModalRoute.withName('/'));
+  //     }
+  //   }
+  // }
+
+  // void _selectTab(int index, BuildContext context) {
+  //   if (index !=
+  //       Provider.of<BottomNavigationProvider>(context, listen: false)
+  //           .currentIndex) {
+  //     Provider.of<BottomNavigationProvider>(context, listen: false)
+  //         .setCurrentIndex(index);
+  //     final routeNames = ['/teams', '/matches', '/contacts', '/me'];
+  //     // Check if the selected tab is Teams
+  //     if (index == 0) {
+  //       // If selected tab is Teams, pop all routes in its Navigator stack
+  //       Provider.of<BottomNavigationProvider>(context, listen: false)
+  //           .navigatorKeys[index]
+  //           .currentState!
+  //           .popUntil((route) => route.isFirst);
+  //     } else {
+  //       // For other tabs, navigate to the respective route
+  //       Provider.of<BottomNavigationProvider>(context, listen: false)
+  //           .navigatorKeys[index]
+  //           .currentState!
+  //           .pushNamedAndRemoveUntil(
+  //               routeNames[index], ModalRoute.withName('/'));
+  //     }
+  //   }
+  // }
   void _selectTab(int index, BuildContext context) {
-    if (index !=
-        Provider.of<BottomNavigationProvider>(context, listen: false)
-            .currentIndex) {
-      Provider.of<BottomNavigationProvider>(context, listen: false)
-          .setCurrentIndex(index);
+    var provider =
+        Provider.of<BottomNavigationProvider>(context, listen: false);
+    if (index != provider.currentIndex) {
+      provider.setCurrentIndex(index);
       final routeNames = ['/teams', '/matches', '/contacts', '/me'];
-      if (Provider.of<BottomNavigationProvider>(context, listen: false)
-              .navigatorKey
-              .currentState !=
-          null) {
-        Provider.of<BottomNavigationProvider>(context, listen: false)
-            .navigatorKey
-            .currentState!
-            .pushNamedAndRemoveUntil(
-                routeNames[index], ModalRoute.withName('/'));
+
+      if (index == 0) {
+        // Do not pop to the first route for 'Teams' tab to preserve state
+        // Navigation state is automatically preserved due to separate Navigator for each tab
+      } else {
+        // For other tabs, continue to reset navigation state as before
+        provider.navigatorKeys[index].currentState!.pushNamedAndRemoveUntil(
+            routeNames[index], ModalRoute.withName('/'));
       }
     }
+  }
+
+  Widget _buildNavigatorForTab(int index, BottomNavigationProvider provider) {
+    return Offstage(
+      offstage: provider.currentIndex != index,
+      child: Navigator(
+        key: provider.navigatorKeys[index],
+        onGenerateRoute: (settings) => _generateRoute(settings),
+      ),
+    );
   }
 
   @override
@@ -77,9 +129,13 @@ class HomePage extends StatelessWidget {
       child: Consumer<BottomNavigationProvider>(
         builder: (context, provider, child) {
           return Scaffold(
-            body: Navigator(
-              key: provider.navigatorKey,
-              onGenerateRoute: _generateRoute,
+            body: Stack(
+              children: [
+                _buildNavigatorForTab(0, provider),
+                _buildNavigatorForTab(1, provider),
+                _buildNavigatorForTab(2, provider),
+                _buildNavigatorForTab(3, provider),
+              ],
             ),
             bottomNavigationBar: _buildBottomNavigationBar(context, provider),
           );

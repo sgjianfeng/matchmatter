@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/views/new_team_page.dart';
+import 'package:matchmatter/views/team_page.dart';
 
 class TeamsPage extends StatefulWidget {
   const TeamsPage({super.key});
@@ -10,8 +11,11 @@ class TeamsPage extends StatefulWidget {
   _TeamsPageState createState() => _TeamsPageState();
 }
 
-class _TeamsPageState extends State<TeamsPage> {
+class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  @override
+  bool get wantKeepAlive => true;
 
   void _showNewTeamModal(BuildContext context) {
     showModalBottomSheet(
@@ -72,10 +76,17 @@ class _TeamsPageState extends State<TeamsPage> {
             }).toList());
   }
 
+  // void _navigateToTeamDetail(BuildContext context, Team team) {
+  //   Navigator.of(context).pushNamed(
+  //     '/teamDetail',
+  //     arguments: team, // Pass the team data to the team detail page
+  //   );
+  // }
   void _navigateToTeamDetail(BuildContext context, Team team) {
-    Navigator.of(context).pushNamed(
-      '/teamDetail',
-      arguments: team, // Pass the team data to the team detail page
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TeamPage(team: team),
+      ),
     );
   }
 
