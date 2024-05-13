@@ -25,8 +25,11 @@ class ContactsPage extends StatelessWidget {
       // 添加更多联系人...
     ];
 
-    return Material(
-      child: ListView.builder(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Contacts'),
+      ),
+      body: ListView.builder(
         itemCount: contacts.length,
         itemBuilder: (context, index) {
           final contact = contacts[index];

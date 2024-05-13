@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:matchmatter/views/new_team_page.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/bottom_navigation_provider.dart';
@@ -7,135 +6,82 @@ import '../views/contacts_page.dart';
 import '../views/matches_page.dart';
 import '../views/me_page.dart';
 import '../views/teams_page.dart';
+import '../views/team_page.dart';
+import '../data/team.dart'; // Assuming you have a Team data class
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
+  Route<dynamic> _generateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case '/teams':
+        return MaterialPageRoute(builder: (_) => TeamsPage());
+      case '/matches':
+        return MaterialPageRoute(builder: (_) => MatchesPage());
+      case '/contacts':
+        return MaterialPageRoute(builder: (_) => ContactsPage());
+      case '/me':
+        return MaterialPageRoute(builder: (_) => MePage());
+      case '/teamDetail':
+        final team = settings.arguments as Team;
+        return MaterialPageRoute(builder: (_) => TeamPage(team: team));
+      default:
+        return MaterialPageRoute(builder: (_) => TeamsPage());
+    }
+  }
+
+  BottomNavigationBar _buildBottomNavigationBar(
+      BuildContext context, BottomNavigationProvider provider) {
+    return BottomNavigationBar(
+      currentIndex: provider.currentIndex,
+      onTap: (index) => _selectTab(index, context),
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Teams'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.sports_soccer), label: 'Matches'),
+        BottomNavigationBarItem(icon: Icon(Icons.contacts), label: 'Contacts'),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Me'),
+      ],
+      backgroundColor: Colors.grey.shade200,
+      unselectedItemColor: Colors.black,
+      selectedItemColor: Colors.blue,
+      showUnselectedLabels: true,
+      elevation: 8.0,
+    );
+  }
+
+  void _selectTab(int index, BuildContext context) {
+    if (index !=
+        Provider.of<BottomNavigationProvider>(context, listen: false)
+            .currentIndex) {
+      Provider.of<BottomNavigationProvider>(context, listen: false)
+          .setCurrentIndex(index);
+      final routeNames = ['/teams', '/matches', '/contacts', '/me'];
+      if (Provider.of<BottomNavigationProvider>(context, listen: false)
+              .navigatorKey
+              .currentState !=
+          null) {
+        Provider.of<BottomNavigationProvider>(context, listen: false)
+            .navigatorKey
+            .currentState!
+            .pushNamedAndRemoveUntil(
+                routeNames[index], ModalRoute.withName('/'));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ChangeNotifierProvider(
+    return ChangeNotifierProvider<BottomNavigationProvider>(
       create: (_) => BottomNavigationProvider(),
       child: Consumer<BottomNavigationProvider>(
         builder: (context, provider, child) {
-          final List<Widget> pages = [
-            const TeamsPage(),
-            const MatchesPage(),
-            const ContactsPage(),
-            const MePage(),
-          ];
           return Scaffold(
-            appBar: AppBar(
-              title: Text(
-                'Match Matter',
-                style: theme.textTheme.titleMedium,
-              ),
-              backgroundColor: theme.colorScheme.primaryContainer,
-              elevation: 0,
-              actions: <Widget>[
-                if (provider.currentIndex ==
-                    0) // Only show '+' icon on TeamsPage
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.add_circle_outline),
-                    color: Colors.white,
-                    offset: const Offset(0, 45),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    onSelected: (String? newValue) {
-                      if (newValue != null) {
-                        switch (newValue) {
-                          case 'NewTeam':
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                    top: Radius.circular(50.0)),
-                              ),
-                              builder: (context) => ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxHeight:
-                                      MediaQuery.of(context).size.height * 0.95,
-                                ),
-                                child: const NewTeamPage(),
-                              ),
-                              // builder: (context) => const ClipRRect(
-                              //   borderRadius: BorderRadius.vertical(
-                              //       top: Radius.circular(50.0)),
-                              //   child: NewTeamPage(),
-                              // ),
-                            );
-                            // showModalBottomSheet(
-                            //   context: context,
-                            //   isScrollControlled: true,
-                            //   builder: (context) => ConstrainedBox(
-                            //     constraints: BoxConstraints(
-                            //       maxHeight:
-                            //           MediaQuery.of(context).size.height * 0.95,
-                            //     ),
-                            //     child: NewTeamPage(),
-                            //   ),
-                            // );
-
-                            break;
-                          case 'Scan':
-                            print('Scan functionality to be implemented');
-                            break;
-                        }
-                      }
-                    },
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<String>>[
-                      const PopupMenuItem<String>(
-                        value: 'NewTeam',
-                        child: Text('New Team'),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'Scan',
-                        child: Text('Scan'),
-                      ),
-                    ],
-                  ),
-              ],
+            body: Navigator(
+              key: provider.navigatorKey,
+              onGenerateRoute: _generateRoute,
             ),
-            body: pages[provider.currentIndex],
-            bottomNavigationBar: BottomNavigationBar(
-              currentIndex: provider.currentIndex,
-              onTap: (index) {
-                provider.setCurrentIndex(index);
-              },
-              items: [
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.group),
-                  label: 'Teams',
-                  activeIcon: const Icon(Icons.group, color: Colors.blue),
-                  backgroundColor: Colors.grey.shade200,
-                ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.sports_soccer),
-                  label: 'Matches',
-                  activeIcon: const Icon(Icons.sports_soccer, color: Colors.blue),
-                  backgroundColor: Colors.grey.shade200,
-                ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.contacts),
-                  label: 'Contacts',
-                  activeIcon: const Icon(Icons.contacts, color: Colors.blue),
-                  backgroundColor: Colors.grey.shade200,
-                ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.person),
-                  label: 'Me',
-                  activeIcon: const Icon(Icons.person, color: Colors.blue),
-                  backgroundColor: Colors.grey.shade200,
-                ),
-              ],
-              unselectedItemColor: Colors.grey,
-              selectedItemColor: Colors.blue,
-              showUnselectedLabels: true,
-            ),
+            bottomNavigationBar: _buildBottomNavigationBar(context, provider),
           );
         },
       ),

@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:matchmatter/data/user.dart'; // 假设这是正确的路径
+import 'package:matchmatter/data/user.dart'; // assume this is the correct path
 
 class MePage extends StatelessWidget {
   const MePage({super.key});
@@ -10,27 +10,30 @@ class MePage extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      // 如果没有用户登录, 跳转到登录页面
+      // If no user logged in, navigate to login page
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacementNamed(context, '/login');
       });
       return const Material(
         child: Center(
-          child: CircularProgressIndicator(), // 显示加载中指示器
+          child: CircularProgressIndicator(), // display loading indicator
         ),
       );
     }
 
-    return Material(
-      child: Center(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Me'),
+      ),
+      body: Center(
         child: FutureBuilder<UserModel>(
-          future: UserDatabaseService(uid: user.uid).getUserData(), // 确保传递uid
+          future: UserDatabaseService(uid: user.uid).getUserData(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator(); // 数据加载时显示加载指示器
+              return const CircularProgressIndicator(); // display loading indicator
             }
             if (snapshot.hasError) {
-              return Text('无法加载用户数据: ${snapshot.error}'); // 显示错误信息
+              return Text('Failed to load user data: ${snapshot.error}');
             }
             final userData = snapshot.data;
             return Column(
@@ -42,7 +45,8 @@ class MePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  userData?.name ?? '未设置名称', // 使用Null-aware操作符显示名称或默认文本
+                  userData?.name ??
+                      '未设置名称', // use null-aware operator to display name or default text
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -50,7 +54,7 @@ class MePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  user.email ?? '未设置邮箱', // 显示邮箱或默认文本
+                  user.email ?? '未设置邮箱', // display email or default text
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.grey,
@@ -58,7 +62,8 @@ class MePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  userData?.phoneNumber ?? '未设置手机号', // 显示电话号码或默认文本
+                  userData?.phoneNumber ??
+                      '未设置手机号', // display phone number or default text
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.grey,
@@ -75,7 +80,7 @@ class MePage extends StatelessWidget {
                   ),
                   child: const Text('退出登录'),
                 ),
-                // 其他界面元素...
+                // other UI elements...
               ],
             );
           },

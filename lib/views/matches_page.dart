@@ -5,7 +5,6 @@ class MatchesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 模拟一些比赛数据
     final matches = [
       {
         'team1': '武汉队',
@@ -30,15 +29,19 @@ class MatchesPage extends StatelessWidget {
       },
     ];
 
-    return Material(
-      child: ListView.builder(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Matches'),
+      ),
+      body: ListView.builder(
         itemCount: matches.length,
         itemBuilder: (context, index) {
           final match = matches[index];
           return ListTile(
             title: Text('${match['team1']} vs ${match['team2']}'),
             subtitle: Text(
-                '${match['date']} ${match['time']} | ${match['location']}'),
+              '${match['date']} ${match['time']} | ${match['location']}',
+            ),
           );
         },
       ),
