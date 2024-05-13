@@ -27,36 +27,17 @@ class _TeamsPageState extends State<TeamsPage> {
 
   PopupMenuButton<String> _buildPopupMenu(BuildContext context) {
     return PopupMenuButton<String>(
-      icon: Icon(Icons.add_circle_outline),
+      icon: Padding(
+        padding: EdgeInsets.only(
+            right: 20), // Set the left padding to adjust the position
+        child: Icon(Icons.menu),
+      ),
+      offset: Offset(0, 38), // Adjust the offset to move the menu downwards
       onSelected: (String value) {
         switch (value) {
           case 'NewTeam':
             // 显示 NewTeamPage 页面
             _showNewTeamModal(context);
-
-            // showModalBottomSheet(
-            //   context: context,
-            //   isScrollControlled: true,
-            //   backgroundColor: Colors
-            //       .transparent, // Ensures no background color for modal itself
-            //   builder: (BuildContext context) {
-            //     // Wrap with a container to manage padding
-            //     return Container(
-            //       padding: EdgeInsets.only(
-            //           top: MediaQuery.of(context).size.height *
-            //               2), // Adjust the top padding
-            //       decoration: BoxDecoration(
-            //         color:
-            //             Colors.white, // Background color for the modal content
-            //         borderRadius: BorderRadius.only(
-            //           topLeft: Radius.circular(20.0),
-            //           topRight: Radius.circular(20.0),
-            //         ),
-            //       ),
-            //       child: const NewTeamPage(), // Your NewTeamPage widget
-            //     );
-            //   },
-            // );
             break;
           case 'Scan':
             // 处理 Scan 选项，暂时留空
