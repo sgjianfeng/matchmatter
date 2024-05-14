@@ -4,6 +4,8 @@ import 'package:matchmatter/data/user.dart';
 class Team {
   final String id;
   final String name;
+  final String? description;
+  final Timestamp createdAt;
   List<String> tags;
   late Map<String, List<UserModel>> roles;
 
@@ -12,13 +14,17 @@ class Team {
   Team({
     required this.id,
     required this.name,
+    this.description,
+    required this.createdAt,
     this.tags = const [],
     required Map<String, List<UserModel>> roles,
   }) {
-    this.roles = roles.isNotEmpty ? roles : {
-      'admins': [],
-      'members': [],
-    };
+    this.roles = roles.isNotEmpty
+        ? roles
+        : {
+            'admins': [],
+            'members': [],
+          };
   }
 
   Future<void> addMember(UserModel user, {bool isAdmin = false}) async {
@@ -47,14 +53,15 @@ class Team {
 
   @override
   String toString() {
-    return 'Team: $name, ID: $id, Tags: $tags, Admins: ${roles['admins']!.length}, Members: ${roles['members']!.length}';
+    return 'Team: $name, ID: $id, Description: $description, Created At: $createdAt, Tags: $tags, Admins: ${roles['admins']!.length}, Members: ${roles['members']!.length}';
   }
 }
 
 class TeamDatabaseService {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  Future<void> updateTeamData(String teamId, Map<String, List<UserModel>> roles) async {
+  Future<void> updateTeamData(
+      String teamId, Map<String, List<UserModel>> roles) async {
     try {
       await firestore.collection('teams').doc(teamId).set({
         'admins': roles['admins']!.map((user) => user.uid).toList(),
@@ -74,10 +81,22 @@ class TeamDatabaseService {
       throw Exception('Team does not exist');
     }
 
-    List<UserModel> admins = (await Future.wait((docSnapshot.data()?['admins'] as List<dynamic>).map((uid) => UserDatabaseService(uid: uid).getUserData()))).cast<UserModel>();
-    List<UserModel> members = (await Future.wait((docSnapshot.data()?['members'] as List<dynamic>).map((uid) => UserDatabaseService(uid: uid).getUserData()))).cast<UserModel>();
+    List<UserModel> admins = (await Future.wait(
+            (docSnapshot.data()?['admins'] as List<dynamic>)
+                .map((uid) => UserDatabaseService(uid: uid).getUserData())))
+        .cast<UserModel>();
+    List<UserModel> members = (await Future.wait(
+            (docSnapshot.data()?['members'] as List<dynamic>)
+                .map((uid) => UserDatabaseService(uid: uid).getUserData())))
+        .cast<UserModel>();
 
-    return Team(id: teamId, name: docSnapshot.data()?['name'] ?? 'Unknown Team', tags: docSnapshot.data()?['tags'].cast<String>(), roles: {'admins': admins, 'members': members});
+    return Team(
+        id: teamId,
+        name: docSnapshot.data()?['name'] ?? 'Unknown Team',
+        description:
+            docSnapshot.data()?['description'] ?? 'No description available',
+        createdAt: docSnapshot.data()?['createdAt'] ?? Timestamp.now(),
+        tags: docSnapshot.data()?['tags']?.cast<String>() ?? [],
+        roles: {'admins': admins, 'members': members});
   }
 }
-

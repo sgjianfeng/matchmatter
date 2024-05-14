@@ -22,29 +22,28 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
       context: context,
       isScrollControlled: true,
       builder: (BuildContext context) => const Padding(
-        padding: EdgeInsets.only(top: 60), // 根据需要调整此值
+        padding: EdgeInsets.only(top: 60), // Adjust this value as needed
         child: NewTeamPage(),
       ),
-      backgroundColor: Colors.transparent, // 设置背景透明以展现内部Padding效果
+      backgroundColor: Colors.transparent, // Set background transparent to show the padding effect
     );
   }
 
   PopupMenuButton<String> _buildPopupMenu(BuildContext context) {
     return PopupMenuButton<String>(
       icon: const Padding(
-        padding: EdgeInsets.only(
-            right: 20), // Set the left padding to adjust the position
+        padding: EdgeInsets.only(right: 20), // Set the left padding to adjust the position
         child: Icon(Icons.menu),
       ),
       offset: const Offset(0, 38), // Adjust the offset to move the menu downwards
       onSelected: (String value) {
         switch (value) {
           case 'NewTeam':
-            // 显示 NewTeamPage 页面
+            // Show NewTeamPage
             _showNewTeamModal(context);
             break;
           case 'Scan':
-            // 处理 Scan 选项，暂时留空
+            // Handle Scan option, currently empty
             break;
         }
       },
@@ -62,26 +61,21 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
   }
 
   Stream<List<Team>> _loadTeamsStream() {
-    return _firestore
-        .collection('teams')
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
-              Map<String, dynamic> data = doc.data();
-              return Team(
-                id: doc.id,
-                name: data['name'] ?? 'Unknown Team',
-                tags: List<String>.from(data['tags'] ?? []),
-                roles: {}, // 这里暂时不加载角色数据
-              );
-            }).toList());
+    return _firestore.collection('teams').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data();
+        return Team(
+          id: doc.id,
+          name: data['name'] ?? 'Unknown Team',
+          description: data['description'], // Optional description
+          createdAt: data['createdAt'] ?? Timestamp.now(),
+          tags: List<String>.from(data['tags'] ?? []),
+          roles: {}, // Not loading roles data here
+        );
+      }).toList();
+    });
   }
 
-  // void _navigateToTeamDetail(BuildContext context, Team team) {
-  //   Navigator.of(context).pushNamed(
-  //     '/teamDetail',
-  //     arguments: team, // Pass the team data to the team detail page
-  //   );
-  // }
   void _navigateToTeamDetail(BuildContext context, Team team) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -90,20 +84,10 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
     );
   }
 
-  // void _navigateToTeamDetail(BuildContext context, Team team) {
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (context) => TeamPage(team: team),
-  //     ),
-  //   );
-  // }
-
   @override
   Widget build(BuildContext context) {
-    //_resetNavigationState(); // 确保在页面构建时重置状态
+    super.build(context);
     return Scaffold(
-      //appBar: AppBar(title: Text('Teams')),
       appBar: AppBar(
         title: const Text('Teams'),
         actions: <Widget>[
@@ -128,7 +112,7 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
                     child: Text('${index + 1}'),
                   ),
                   title: Text(team.name),
-                  subtitle: Text(team.tags.join(', ')), // 显示标签
+                  subtitle: Text(team.tags.join(', ')), // Display tags
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () {
                     _navigateToTeamDetail(context, team);

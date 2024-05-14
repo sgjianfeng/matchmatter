@@ -1,44 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:matchmatter/data/team.dart';
+import 'package:matchmatter/views/team_profile_page.dart';
 import 'package:provider/provider.dart';
 import '../providers/bottom_navigation_provider.dart';
 
 class TeamPage extends StatefulWidget {
   final Team team;
 
-  const TeamPage({super.key, required this.team});
+  const TeamPage({Key? key, required this.team}) : super(key: key);
 
   @override
   _TeamPageState createState() => _TeamPageState();
 }
 
 class _TeamPageState extends State<TeamPage> {
-
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
-          title: Text(widget.team.name, style: const TextStyle(color: Colors.black)),
+          title: Text(
+            widget.team.name,
+            style: const TextStyle(color: Colors.black),
+          ),
           iconTheme: const IconThemeData(color: Colors.black),
           bottom: const TabBar(
             labelColor: Colors.black,
             indicatorSize: TabBarIndicatorSize.label,
             indicatorColor: Colors.purple,
             tabs: [
-              Tab(text: 'Chat'),
-              Tab(text: 'Details'),
+              Tab(text: 'Messages'),
+              Tab(text: 'Chats'),
               Tab(text: 'Apps'),
+              Tab(text: 'Profile'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            _buildChatTab(), // Chat tab
-            _buildDetailsTab(), // Details tab
-            _buildAppsTab(), // Apps tab
+            _buildMessagesTab(),
+            _buildChatsTab(),
+            _buildAppsTab(),
+            //_buildProfileTab(context), // Pass context here
+            TeamProfilePage(team: widget.team), // Include the profile widget
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
@@ -61,57 +67,44 @@ class _TeamPageState extends State<TeamPage> {
     );
   }
 
-  Widget _buildChatTab() {
+  Widget _buildMessagesTab() {
     return ListView(
       children: [
-        ListTile(title: Text('Meeting details for ${widget.team.name}')),
-        ...widget.team.tags.map((tag) => ListTile(title: Text(tag))),
-        _buildMessageComposer(),
+        ListTile(title: Text('Messages for ${widget.team.name}')),
+        // Add message-related content here
       ],
     );
   }
 
-  Widget _buildMessageComposer() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Type a message',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.grey[200],
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.send, color: Colors.blue),
-            onPressed: () {},
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailsTab() {
+  Widget _buildChatsTab() {
     return ListView(
       children: [
-        ListTile(title: Text('Team ID: ${widget.team.id}')),
-        ListTile(
-            title:
-                Text('Members: ${widget.team.roles['members']?.join(', ')}')),
-        ListTile(
-            title: Text('Admins: ${widget.team.roles['admins']?.join(', ')}')),
+        ListTile(title: Text('Chats for ${widget.team.name}')),
+        // Add chat-related content here
       ],
     );
   }
 
   Widget _buildAppsTab() {
     return const Center(child: Text('Apps content goes here'));
+  }
+
+  Widget _buildProfileTab(BuildContext context) {
+    return ListView(
+      children: [
+        ListTile(
+          title: Text('Profile for ${widget.team.name}'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TeamProfilePage(team: widget.team),
+              ),
+            );
+          },
+        ),
+        // Add other profile-related content here
+      ],
+    );
   }
 }

@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:matchmatter/data/contact.dart';
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
-// 确保导入您的主题配置文件
 
 class CreateTeamSummaryPage extends StatelessWidget {
   final String teamId;
   final String teamName;
   final String teamTag;
+  final String? description; // Optional description
   final List<Contact> selectedContacts;
 
   const CreateTeamSummaryPage({
@@ -17,56 +17,58 @@ class CreateTeamSummaryPage extends StatelessWidget {
     required this.teamId,
     required this.teamName,
     required this.teamTag,
+    this.description, // Optional description
     required this.selectedContacts,
   });
 
-  // 在 CreateTeamSummaryPage 类中添加一个新的方法
+  // Method to create a team in Firestore
   void _createTeamInFirestore(BuildContext context) async {
     try {
-      List<String> memberIds =
-          selectedContacts.map((contact) => contact.uid).toList();
-      List<String> adminIds = [selectedContacts.first.uid]; // 假设第一个联系人是管理员
+      List<String> memberIds = selectedContacts.map((contact) => contact.uid).toList();
+      List<String> adminIds = [selectedContacts.first.uid]; // First contact is admin
 
-      // 异步获取所有成员的完整用户数据
+      // Get all members' full user data asynchronously
       List<UserModel> members = await Future.wait(
-          memberIds.map((id) => UserDatabaseService(uid: id).getUserData()));
+        memberIds.map((id) => UserDatabaseService(uid: id).getUserData())
+      );
 
-      // 创建团队实例
+      // Create team instance
       Team newTeam = Team(
         id: teamId,
         name: teamName,
+        description: description,
+        createdAt: Timestamp.now(),
         tags: [teamTag],
         roles: {
-          'admins':
-              members.where((user) => adminIds.contains(user.uid)).toList(),
+          'admins': members.where((user) => adminIds.contains(user.uid)).toList(),
           'members': members,
         },
       );
 
-      // 存储到 Firestore
+      // Store to Firestore
       await FirebaseFirestore.instance.collection('teams').doc(newTeam.id).set({
         'name': newTeam.name,
+        'description': newTeam.description,
         'tags': newTeam.tags,
         'admins': newTeam.roles['admins']!.map((user) => user.uid).toList(),
         'members': newTeam.roles['members']!.map((user) => user.uid).toList(),
+        'createdAt': newTeam.createdAt,
       });
 
-      // 可选：展示成功消息或处理其他逻辑
+      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Team successfully created!'),
         duration: Duration(seconds: 2),
       ));
 
-      // 延迟后导航回团队列表
+      // Navigate back to the team list after a delay
       await Future.delayed(const Duration(seconds: 1));
-      //Navigator.pop(context); // 导航回团队列表页
       Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
-      // 处理错误
+      // Handle errors
       if (kDebugMode) {
         print('Error creating team: $e');
       }
-      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Failed to create team.'),
       ));
@@ -75,16 +77,14 @@ class CreateTeamSummaryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context); // 使用Theme.of来获取当前主题
+    final theme = Theme.of(context); // Get current theme
 
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text('Create Team Summary', style: theme.textTheme.headlineSmall),
+        title: Text('Create Team Summary', style: theme.textTheme.headlineSmall),
         actions: [
           IconButton(
-            icon: const Icon(
-                Icons.done_rounded), // Replace with your desired icon
+            icon: const Icon(Icons.done_rounded), // Done icon
             onPressed: () {
               _createTeamInFirestore(context);
             },
@@ -101,6 +101,7 @@ class CreateTeamSummaryPage extends StatelessWidget {
                 MapEntry('Team ID', teamId),
                 MapEntry('Team Name', teamName),
                 MapEntry('Team Tag', teamTag),
+                if (description != null) MapEntry('Description', description!),
               ]),
               backgroundColor: theme.colorScheme.primaryContainer,
               context: context,
@@ -108,10 +109,11 @@ class CreateTeamSummaryPage extends StatelessWidget {
             _buildSection(
               title: 'Admins',
               child: _buildSingleListTile(
-                  title: selectedContacts.first.name,
-                  subtitle: selectedContacts.first.email,
-                  theme: theme,
-                  leading: Icons.admin_panel_settings),
+                title: selectedContacts.first.name,
+                subtitle: selectedContacts.first.email,
+                theme: theme,
+                leading: Icons.admin_panel_settings,
+              ),
               backgroundColor: theme.colorScheme.surfaceVariant,
               context: context,
             ),
@@ -124,13 +126,13 @@ class CreateTeamSummaryPage extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final contact = selectedContacts[index];
                   return _buildSingleListTile(
-                      title: contact.name,
-                      subtitle: contact.email,
-                      theme: theme,
-                      leading: Icons.person);
+                    title: contact.name,
+                    subtitle: contact.email,
+                    theme: theme,
+                    leading: Icons.person,
+                  );
                 },
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 1), // 减小间距
+                separatorBuilder: (context, index) => const SizedBox(height: 1),
               ),
               backgroundColor: theme.colorScheme.surfaceVariant,
               context: context,
@@ -141,11 +143,12 @@ class CreateTeamSummaryPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(
-      {required String title,
-      required Widget child,
-      required Color backgroundColor,
-      required BuildContext context}) {
+  Widget _buildSection({
+    required String title,
+    required Widget child,
+    required Color backgroundColor,
+    required BuildContext context,
+  }) {
     final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.all(5),
@@ -166,24 +169,25 @@ class CreateTeamSummaryPage extends StatelessWidget {
 
   Widget _buildListTiles(ThemeData theme, List<MapEntry<String, String>> data) {
     return Column(
-      children: data
-          .map((item) => _buildSingleListTile(
-              title: item.key, subtitle: item.value, theme: theme))
-          .toList(),
+      children: data.map((item) => _buildSingleListTile(
+        title: item.key,
+        subtitle: item.value,
+        theme: theme,
+      )).toList(),
     );
   }
 
-  ListTile _buildSingleListTile(
-      {required String title,
-      required String subtitle,
-      required ThemeData theme,
-      IconData? leading}) {
+  ListTile _buildSingleListTile({
+    required String title,
+    required String subtitle,
+    required ThemeData theme,
+    IconData? leading,
+  }) {
     return ListTile(
       leading: leading != null ? Icon(leading) : null,
       title: Text(title, style: theme.textTheme.bodyLarge),
       subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
-      contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16.0, vertical: 0), // 调整垂直内间距为0
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
     );
   }
 }

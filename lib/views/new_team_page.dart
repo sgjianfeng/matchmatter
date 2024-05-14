@@ -17,9 +17,9 @@ class _NewTeamPageState extends State<NewTeamPage> {
   final TextEditingController _teamIdController = TextEditingController();
   final TextEditingController _teamNameController = TextEditingController();
   final TextEditingController _teamTagController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
 
-  List<bool> selectedContacts =
-      List.generate(5, (index) => false); // Tracks selection
+  List<bool> selectedContacts = List.generate(5, (index) => false); // Tracks selection
   bool _isSearching = false; // Tracks if the search is active
   final TextEditingController _searchController = TextEditingController();
   List<Contact> filteredContacts = [];
@@ -27,8 +27,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
   @override
   void initState() {
     super.initState();
-    filteredContacts =
-        contacts; // Set the filteredContacts to all contacts initially
+    filteredContacts = contacts; // Set the filteredContacts to all contacts initially
     _loadCurrentUser();
   }
 
@@ -38,12 +37,12 @@ class _NewTeamPageState extends State<NewTeamPage> {
       UserDatabaseService(uid: user.uid).getUserData().then((userData) {
         setState(() {
           for (int i = 0; i < 10; i++) {
-            // 假设添加10次相同的用户数据进行测试
+            // Assuming adding 10 times the same user data for testing
             contacts.add(Contact(
                 uid: user.uid, name: userData.name, email: user.email ?? ''));
-            selectedContacts.add(i == 0); // 默认选中第一个（当前用户）
+            selectedContacts.add(i == 0); // Select the first one by default (current user)
           }
-          filteredContacts = contacts; // 更新filteredContacts列表
+          filteredContacts = contacts; // Update filteredContacts list
         });
       }).catchError((error) {
         print("Failed to load user data: $error");
@@ -58,8 +57,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
         filteredContacts = contacts;
       } else {
         _searchController.clear();
-        filteredContacts =
-            contacts; // Reset to all contacts when search is toggled off
+        filteredContacts = contacts; // Reset to all contacts when search is toggled off
       }
     });
   }
@@ -82,15 +80,14 @@ class _NewTeamPageState extends State<NewTeamPage> {
   }
 
   Future<bool> checkTeamIdUnique(String teamId) async {
-    // 这里应该有一些逻辑来检查团队ID是否唯一
-    // 返回 true 如果唯一，false 如果已经存在
-    return true; // 暂时返回 true，你需要根据你的数据库实现这个功能
+    // Logic to check if team ID is unique
+    // Return true if unique, false if already exists
+    return true; // For now, return true. Implement this based on your database
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //backgroundColor: Colors.transparent,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -116,7 +113,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                 return;
               }
 
-              // 检查 Team ID 是否唯一
+              // Check if Team ID is unique
               bool isUnique = await checkTeamIdUnique(_teamIdController.text);
               if (!isUnique) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -129,7 +126,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                 return;
               }
 
-              // 如果 Team ID 唯一，导航到创建团队总结页面
+              // If Team ID is unique, navigate to create team summary page
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -137,6 +134,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                     teamId: _teamIdController.text,
                     teamName: _teamNameController.text,
                     teamTag: _teamTagController.text,
+                    description: _descriptionController.text, // Pass the description here
                     selectedContacts: contacts
                         .asMap()
                         .entries
@@ -203,7 +201,18 @@ class _NewTeamPageState extends State<NewTeamPage> {
                       ),
                       style: const TextStyle(fontSize: 14),
                     ),
-                    //const SizedBox(height: 20),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                            vertical: 10.0,
+                            horizontal: 10.0), // Adjusted padding
+                      ),
+                      style: const TextStyle(fontSize: 14),
+                    ),
                   ],
                 ),
               ),
@@ -223,11 +232,9 @@ class _NewTeamPageState extends State<NewTeamPage> {
                           icon: const Icon(Icons.close),
                           onPressed: () {
                             _toggleSearch();
-                            //_searchController.clear();
-                            //_filterContacts(''); // 重新过滤联系人列表，显示所有联系人
                           },
                         )
-                      : const Icon(Icons.search), // 当没有输入时显示搜索图标
+                      : const Icon(Icons.search), // Show search icon when no input
                   contentPadding: const EdgeInsets.symmetric(
                       vertical: 10.0, horizontal: 10.0),
                 ),
@@ -241,7 +248,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                 var contact = filteredContacts[index];
                 return ListTile(
                   leading: CircleAvatar(
-                    child: Text(contact.name[0]), // 显示用户名的第一个字母
+                    child: Text(contact.name[0]), // Show the first letter of the username
                   ),
                   title: Text(contact.name),
                   subtitle: Text(contact.email),
