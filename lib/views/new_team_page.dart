@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:matchmatter/data/contact.dart';
@@ -12,22 +13,21 @@ class NewTeamPage extends StatefulWidget {
 }
 
 class _NewTeamPageState extends State<NewTeamPage> {
-  List<Contact> contacts = []; // Example contacts
+  List<Contact> contacts = [];
 
   final TextEditingController _teamIdController = TextEditingController();
   final TextEditingController _teamNameController = TextEditingController();
   final TextEditingController _teamTagController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  List<bool> selectedContacts = List.generate(5, (index) => false); // Tracks selection
-  bool _isSearching = false; // Tracks if the search is active
+  List<bool> selectedContacts = [];
+  bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   List<Contact> filteredContacts = [];
 
   @override
   void initState() {
     super.initState();
-    filteredContacts = contacts; // Set the filteredContacts to all contacts initially
     _loadCurrentUser();
   }
 
@@ -36,13 +36,13 @@ class _NewTeamPageState extends State<NewTeamPage> {
     if (user != null) {
       UserDatabaseService(uid: user.uid).getUserData().then((userData) {
         setState(() {
-          for (int i = 0; i < 10; i++) {
-            // Assuming adding 10 times the same user data for testing
-            contacts.add(Contact(
-                uid: user.uid, name: userData.name, email: user.email ?? ''));
-            selectedContacts.add(i == 0); // Select the first one by default (current user)
-          }
-          filteredContacts = contacts; // Update filteredContacts list
+          contacts = List.generate(10, (index) => Contact(
+            uid: user.uid,
+            name: '${userData.name} $index',
+            email: '${user.email ?? ''} $index'
+          ));
+          selectedContacts = List.generate(contacts.length, (index) => index == 0);
+          filteredContacts = contacts;
         });
       }).catchError((error) {
         print("Failed to load user data: $error");
@@ -57,7 +57,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
         filteredContacts = contacts;
       } else {
         _searchController.clear();
-        filteredContacts = contacts; // Reset to all contacts when search is toggled off
+        filteredContacts = contacts;
       }
     });
   }
@@ -80,9 +80,8 @@ class _NewTeamPageState extends State<NewTeamPage> {
   }
 
   Future<bool> checkTeamIdUnique(String teamId) async {
-    // Logic to check if team ID is unique
-    // Return true if unique, false if already exists
-    return true; // For now, return true. Implement this based on your database
+    var snapshot = await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
+    return !snapshot.exists;
   }
 
   @override
@@ -102,8 +101,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
           IconButton(
             icon: const Icon(Icons.navigate_next),
             onPressed: () async {
-              if (_teamIdController.text.isEmpty ||
-                  _teamNameController.text.isEmpty) {
+              if (_teamIdController.text.isEmpty || _teamNameController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Please fill in all the required fields.'),
@@ -113,20 +111,17 @@ class _NewTeamPageState extends State<NewTeamPage> {
                 return;
               }
 
-              // Check if Team ID is unique
               bool isUnique = await checkTeamIdUnique(_teamIdController.text);
               if (!isUnique) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text(
-                        'Team ID is already taken. Please choose another one.'),
+                    content: Text('Team ID is already taken. Please choose another one.'),
                     backgroundColor: Colors.red,
                   ),
                 );
                 return;
               }
 
-              // If Team ID is unique, navigate to create team summary page
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -134,7 +129,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                     teamId: _teamIdController.text,
                     teamName: _teamNameController.text,
                     teamTag: _teamTagController.text,
-                    description: _descriptionController.text, // Pass the description here
+                    description: _descriptionController.text,
                     selectedContacts: contacts
                         .asMap()
                         .entries
@@ -173,7 +168,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(
                             vertical: 10.0,
-                            horizontal: 10.0), // Adjusted padding
+                            horizontal: 10.0),
                       ),
                       style: const TextStyle(fontSize: 14),
                     ),
@@ -185,7 +180,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(
                             vertical: 10.0,
-                            horizontal: 10.0), // Adjusted padding
+                            horizontal: 10.0),
                       ),
                       style: const TextStyle(fontSize: 14),
                     ),
@@ -197,7 +192,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(
                             vertical: 10.0,
-                            horizontal: 10.0), // Adjusted padding
+                            horizontal: 10.0),
                       ),
                       style: const TextStyle(fontSize: 14),
                     ),
@@ -209,7 +204,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(
                             vertical: 10.0,
-                            horizontal: 10.0), // Adjusted padding
+                            horizontal: 10.0),
                       ),
                       style: const TextStyle(fontSize: 14),
                     ),
@@ -234,7 +229,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                             _toggleSearch();
                           },
                         )
-                      : const Icon(Icons.search), // Show search icon when no input
+                      : const Icon(Icons.search),
                   contentPadding: const EdgeInsets.symmetric(
                       vertical: 10.0, horizontal: 10.0),
                 ),
@@ -248,7 +243,7 @@ class _NewTeamPageState extends State<NewTeamPage> {
                 var contact = filteredContacts[index];
                 return ListTile(
                   leading: CircleAvatar(
-                    child: Text(contact.name[0]), // Show the first letter of the username
+                    child: Text(contact.name[0]),
                   ),
                   title: Text(contact.name),
                   subtitle: Text(contact.email),

@@ -63,14 +63,23 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
   Stream<List<Team>> _loadTeamsStream() {
     return _firestore.collection('teams').snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
-        Map<String, dynamic> data = doc.data();
+        var data = doc.data() as Map<String, dynamic>;
+        var rolesData = data['roles'] ?? {};
+
+        List<String> admins = rolesData.containsKey('admins')
+            ? List<String>.from(rolesData['admins'])
+            : [];
+        List<String> members = rolesData.containsKey('members')
+            ? List<String>.from(rolesData['members'])
+            : [];
+
         return Team(
           id: doc.id,
           name: data['name'] ?? 'Unknown Team',
-          description: data['description'], // Optional description
+          description: data['description'],
           createdAt: data['createdAt'] ?? Timestamp.now(),
           tags: List<String>.from(data['tags'] ?? []),
-          roles: {}, // Not loading roles data here
+          roles: {'admins': admins, 'members': members},
         );
       }).toList();
     });
@@ -100,8 +109,8 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return const Center(child: Text('Failed to load teams'));
-          } else if (snapshot.hasData) {
+            return Center(child: Text('Failed to load teams: ${snapshot.error}'));
+          } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
             final teams = snapshot.data!;
             return ListView.builder(
               itemCount: teams.length,

@@ -7,9 +7,7 @@ class Team {
   final String? description;
   final Timestamp createdAt;
   List<String> tags;
-  late Map<String, List<UserModel>> roles;
-
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  late Map<String, List<String>> roles;
 
   Team({
     required this.id,
@@ -17,7 +15,7 @@ class Team {
     this.description,
     required this.createdAt,
     this.tags = const [],
-    required Map<String, List<UserModel>> roles,
+    required Map<String, List<String>> roles,
   }) {
     this.roles = roles.isNotEmpty
         ? roles
@@ -28,75 +26,83 @@ class Team {
   }
 
   Future<void> addMember(UserModel user, {bool isAdmin = false}) async {
-    DocumentReference teamRef = firestore.collection('teams').doc(id);
     bool updated = false;
 
     // Check if the user is already a member
-    if (!roles['members']!.any((u) => u.uid == user.uid)) {
-      roles['members']!.add(user);
+    if (!roles['members']!.contains(user.uid)) {
+      roles['members']!.add(user.uid!);
       updated = true;
     }
 
     // Check if the user should also be an admin
-    if (isAdmin && !roles['admins']!.any((u) => u.uid == user.uid)) {
-      roles['admins']!.add(user);
+    if (isAdmin && !roles['admins']!.contains(user.uid)) {
+      roles['admins']!.add(user.uid!);
       updated = true;
     }
 
     if (updated) {
-      await teamRef.update({
-        'members': roles['members']!.map((u) => u.uid).toList(),
-        'admins': roles['admins']!.map((u) => u.uid).toList(),
-      });
+      await updateRolesInFirestore();
     }
+  }
+
+  Future<void> updateRolesInFirestore() async {
+    DocumentReference teamRef = FirebaseFirestore.instance.collection('teams').doc(id);
+    await teamRef.update({
+      'roles.admins': roles['admins'],
+      'roles.members': roles['members'],
+    });
+  }
+
+  Future<void> saveToFirestore() async {
+    await FirebaseFirestore.instance.collection('teams').doc(id).set({
+      'id': id,
+      'name': name,
+      'description': description,
+      'tags': tags,
+      'roles': {
+        'admins': roles['admins'],
+        'members': roles['members'],
+      },
+      'createdAt': createdAt,
+    });
   }
 
   @override
   String toString() {
     return 'Team: $name, ID: $id, Description: $description, Created At: $createdAt, Tags: $tags, Admins: ${roles['admins']!.length}, Members: ${roles['members']!.length}';
   }
-}
 
-class TeamDatabaseService {
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-  Future<void> updateTeamData(
-      String teamId, Map<String, List<UserModel>> roles) async {
-    try {
-      await firestore.collection('teams').doc(teamId).set({
-        'admins': roles['admins']!.map((user) => user.uid).toList(),
-        'members': roles['members']!.map((user) => user.uid).toList(),
-      });
-    } catch (e) {
-      print('Error updating team data: $e');
-      throw Exception('Failed to update team data');
-    }
-  }
-
-  Future<Team> getTeamData(String teamId) async {
+  static Future<Team> getTeamData(String teamId) async {
     DocumentSnapshot<Map<String, dynamic>> docSnapshot =
-        await firestore.collection('teams').doc(teamId).get();
+        await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
 
     if (!docSnapshot.exists) {
       throw Exception('Team does not exist');
     }
 
-    List<UserModel> admins = (await Future.wait(
-            (docSnapshot.data()?['admins'] as List<dynamic>)
-                .map((uid) => UserDatabaseService(uid: uid).getUserData())))
-        .cast<UserModel>();
-    List<UserModel> members = (await Future.wait(
-            (docSnapshot.data()?['members'] as List<dynamic>)
-                .map((uid) => UserDatabaseService(uid: uid).getUserData())))
-        .cast<UserModel>();
+    var data = docSnapshot.data()!;
+    var rolesData = data['roles'] ?? {};
+
+    List<String> admins = rolesData.containsKey('admins')
+        ? List<String>.from(rolesData['admins'])
+        : [];
+    List<String> members = rolesData.containsKey('members')
+        ? List<String>.from(rolesData['members'])
+        : [];
 
     return Team(
-        id: teamId,
-        name: docSnapshot.data()?['name'] ?? 'Unknown Team',
-        description:
-            docSnapshot.data()?['description'] ?? 'No description available',
-        createdAt: docSnapshot.data()?['createdAt'] ?? Timestamp.now(),
-        tags: docSnapshot.data()?['tags']?.cast<String>() ?? [],
-        roles: {'admins': admins, 'members': members});
+      id: teamId,
+      name: data['name'] ?? 'Unknown Team',
+      description: data['description'] ?? 'No description available',
+      createdAt: data['createdAt'] ?? Timestamp.now(),
+      tags: data['tags']?.cast<String>() ?? [],
+      roles: {'admins': admins, 'members': members},
+    );
+  }
+
+  static Future<Map<String, List<UserModel>>> getTeamRoles(Map<String, List<String>> roles) async {
+    List<UserModel> admins = await Future.wait(roles['admins']!.map((uid) => UserDatabaseService(uid: uid).getUserData()));
+    List<UserModel> members = await Future.wait(roles['members']!.map((uid) => UserDatabaseService(uid: uid).getUserData()));
+    return {'admins': admins, 'members': members};
   }
 }

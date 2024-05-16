@@ -4,75 +4,81 @@ import 'package:matchmatter/data/user.dart';
 
 class TeamProfilePage extends StatelessWidget {
   final Team team;
+  final Map<String, List<UserModel>> roles;
 
-  TeamProfilePage({required this.team});
+  const TeamProfilePage({
+    Key? key,
+    required this.team,
+    required this.roles,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // First Section: Team Basic Properties
-          Text(
-            'Team ID: ${team.id}',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Team Name: ${team.name}',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Tags: ${team.tags.join(', ')}',
-            style: TextStyle(fontSize: 16),
-          ),
-          SizedBox(height: 16),
-
-          // Second Section: Team Roles and Members
-          Text(
-            'Roles:',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Expanded(
-            child: ListView(
-              children: team.roles.entries.map((entry) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${entry.key}:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    ...entry.value.map((user) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Name: ${user.name}',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                            Text(
-                              'Email: ${user.email}',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    SizedBox(height: 8),
-                  ],
-                );
-              }).toList(),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Team Profile'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Team ID: ${team.id}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              'Team Name: ${team.name}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Description: ${team.description ?? 'No description available'}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Created At: ${team.createdAt.toDate()}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tags: ${team.tags.join(', ')}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Admins',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ..._buildRoleSection(roles['admins']),
+            const SizedBox(height: 16),
+            Text(
+              'Members',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ..._buildRoleSection(roles['members']),
+          ],
+        ),
       ),
     );
+  }
+
+  List<Widget> _buildRoleSection(List<UserModel>? users) {
+    if (users == null || users.isEmpty) {
+      return [const Text('No users in this role.')];
+    }
+    return users.map((user) {
+      return ListTile(
+        leading: CircleAvatar(
+          child: Text(user.name[0]),
+        ),
+        title: Text(user.name),
+        subtitle: Text(user.email),
+      );
+    }).toList();
   }
 }

@@ -1,6 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:matchmatter/data/contact.dart';
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
@@ -21,8 +20,7 @@ class CreateTeamSummaryPage extends StatelessWidget {
     required this.selectedContacts,
   });
 
-  // Method to create a team in Firestore
-  void _createTeamInFirestore(BuildContext context) async {
+  Future<void> _createTeamInFirestore(BuildContext context) async {
     try {
       List<String> memberIds = selectedContacts.map((contact) => contact.uid).toList();
       List<String> adminIds = [selectedContacts.first.uid]; // First contact is admin
@@ -32,6 +30,12 @@ class CreateTeamSummaryPage extends StatelessWidget {
         memberIds.map((id) => UserDatabaseService(uid: id).getUserData())
       );
 
+      // Create roles with permissions
+      var roles = {
+        'admins': members.where((user) => adminIds.contains(user.uid)).map((user) => user.uid!).toList(),
+        'members': members.map((user) => user.uid!).toList(),
+      };
+
       // Create team instance
       Team newTeam = Team(
         id: teamId,
@@ -39,21 +43,11 @@ class CreateTeamSummaryPage extends StatelessWidget {
         description: description,
         createdAt: Timestamp.now(),
         tags: [teamTag],
-        roles: {
-          'admins': members.where((user) => adminIds.contains(user.uid)).toList(),
-          'members': members,
-        },
+        roles: roles,
       );
 
       // Store to Firestore
-      await FirebaseFirestore.instance.collection('teams').doc(newTeam.id).set({
-        'name': newTeam.name,
-        'description': newTeam.description,
-        'tags': newTeam.tags,
-        'admins': newTeam.roles['admins']!.map((user) => user.uid).toList(),
-        'members': newTeam.roles['members']!.map((user) => user.uid).toList(),
-        'createdAt': newTeam.createdAt,
-      });
+      await newTeam.saveToFirestore();
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -66,9 +60,7 @@ class CreateTeamSummaryPage extends StatelessWidget {
       Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
       // Handle errors
-      if (kDebugMode) {
-        print('Error creating team: $e');
-      }
+      print('Error creating team: $e');
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Failed to create team.'),
       ));
