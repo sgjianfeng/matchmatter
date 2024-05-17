@@ -16,6 +16,7 @@ class TeamProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false, // 不显示返回按钮
         title: const Text('Team Profile'),
       ),
       body: SingleChildScrollView(
@@ -67,11 +68,16 @@ class TeamProfilePage extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildRoleSection(List<UserModel>? users) {
+  List<Widget> _buildRoleSection(List<UserModel>? users, {List<UserModel>? excludeFrom}) {
     if (users == null || users.isEmpty) {
       return [const Text('No users in this role.')];
     }
-    return users.map((user) {
+
+    Set<String> excludeUids = excludeFrom?.map((user) => user.uid!).toSet() ?? {};
+
+    return users
+        .where((user) => !excludeUids.contains(user.uid))
+        .map((user) {
       return ListTile(
         leading: CircleAvatar(
           child: Text(user.name[0]),

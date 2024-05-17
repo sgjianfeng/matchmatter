@@ -46,8 +46,17 @@ class CreateTeamSummaryPage extends StatelessWidget {
         roles: roles,
       );
 
-      // Store to Firestore
+      // Store to Firestore (initial creation)
       await newTeam.saveToFirestore();
+
+      // Add creator to both admins and members without duplication
+      await newTeam.addCreator(UserModel(
+        uid: selectedContacts.first.uid,
+        name: selectedContacts.first.name,
+        phoneNumber: '', // You might need to fetch this information
+        email: selectedContacts.first.email,
+        createdAt: Timestamp.now(),
+      ));
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

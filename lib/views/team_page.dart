@@ -8,7 +8,7 @@ import '../providers/bottom_navigation_provider.dart';
 class TeamPage extends StatefulWidget {
   final Team team;
 
-  const TeamPage({Key? key, required this.team}) : super(key: key);
+  const TeamPage({super.key, required this.team});
 
   @override
   _TeamPageState createState() => _TeamPageState();

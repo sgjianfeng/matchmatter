@@ -7,7 +7,7 @@ class Team {
   final String? description;
   final Timestamp createdAt;
   List<String> tags;
-  late Map<String, List<String>> roles;
+  Map<String, List<String>> roles;
 
   Team({
     required this.id,
@@ -15,41 +15,41 @@ class Team {
     this.description,
     required this.createdAt,
     this.tags = const [],
-    required Map<String, List<String>> roles,
-  }) {
-    this.roles = roles.isNotEmpty
-        ? roles
-        : {
-            'admins': [],
-            'members': [],
-          };
-  }
+    required this.roles,
+  });
 
-  Future<void> addMember(UserModel user, {bool isAdmin = false}) async {
-    bool updated = false;
-
-    // Check if the user is already a member
-    if (!roles['members']!.contains(user.uid)) {
-      roles['members']!.add(user.uid!);
-      updated = true;
+  Future<void> addMember(UserModel user, {String role = 'members'}) async {
+    if (!roles.containsKey(role)) {
+      roles[role] = [];
     }
 
-    // Check if the user should also be an admin
-    if (isAdmin && !roles['admins']!.contains(user.uid)) {
-      roles['admins']!.add(user.uid!);
-      updated = true;
-    }
-
-    if (updated) {
+    if (!roles[role]!.contains(user.uid)) {
+      roles[role]!.add(user.uid!);
       await updateRolesInFirestore();
     }
+  }
+
+  Future<void> addCreator(UserModel user) async {
+    if (!roles.containsKey('admins')) {
+      roles['admins'] = [];
+    }
+    if (!roles.containsKey('members')) {
+      roles['members'] = [];
+    }
+
+    if (!roles['admins']!.contains(user.uid)) {
+      roles['admins']!.add(user.uid!);
+    }
+    if (!roles['members']!.contains(user.uid)) {
+      roles['members']!.add(user.uid!);
+    }
+    await updateRolesInFirestore();
   }
 
   Future<void> updateRolesInFirestore() async {
     DocumentReference teamRef = FirebaseFirestore.instance.collection('teams').doc(id);
     await teamRef.update({
-      'roles.admins': roles['admins'],
-      'roles.members': roles['members'],
+      'roles': roles,
     });
   }
 
@@ -59,17 +59,14 @@ class Team {
       'name': name,
       'description': description,
       'tags': tags,
-      'roles': {
-        'admins': roles['admins'],
-        'members': roles['members'],
-      },
+      'roles': roles,
       'createdAt': createdAt,
     });
   }
 
   @override
   String toString() {
-    return 'Team: $name, ID: $id, Description: $description, Created At: $createdAt, Tags: $tags, Admins: ${roles['admins']!.length}, Members: ${roles['members']!.length}';
+    return 'Team: $name, ID: $id, Description: $description, Created At: $createdAt, Tags: $tags, Roles: ${roles.keys.join(', ')}';
   }
 
   static Future<Team> getTeamData(String teamId) async {
@@ -83,26 +80,24 @@ class Team {
     var data = docSnapshot.data()!;
     var rolesData = data['roles'] ?? {};
 
-    List<String> admins = rolesData.containsKey('admins')
-        ? List<String>.from(rolesData['admins'])
-        : [];
-    List<String> members = rolesData.containsKey('members')
-        ? List<String>.from(rolesData['members'])
-        : [];
-
     return Team(
       id: teamId,
       name: data['name'] ?? 'Unknown Team',
       description: data['description'] ?? 'No description available',
       createdAt: data['createdAt'] ?? Timestamp.now(),
       tags: data['tags']?.cast<String>() ?? [],
-      roles: {'admins': admins, 'members': members},
+      roles: rolesData.map((key, value) => MapEntry(key, List<String>.from(value))),
     );
   }
 
   static Future<Map<String, List<UserModel>>> getTeamRoles(Map<String, List<String>> roles) async {
-    List<UserModel> admins = await Future.wait(roles['admins']!.map((uid) => UserDatabaseService(uid: uid).getUserData()));
-    List<UserModel> members = await Future.wait(roles['members']!.map((uid) => UserDatabaseService(uid: uid).getUserData()));
-    return {'admins': admins, 'members': members};
+    Map<String, List<UserModel>> rolesWithUsers = {};
+
+    for (var role in roles.entries) {
+      List<UserModel> users = await Future.wait(role.value.map((uid) => UserDatabaseService(uid: uid).getUserData()));
+      rolesWithUsers[role.key] = users;
+    }
+
+    return rolesWithUsers;
   }
 }
