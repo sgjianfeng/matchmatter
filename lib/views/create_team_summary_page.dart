@@ -8,7 +8,7 @@ class CreateTeamSummaryPage extends StatelessWidget {
   final String teamId;
   final String teamName;
   final String teamTag;
-  final String? description; // Optional description
+  final String? description;
   final List<Contact> selectedContacts;
 
   const CreateTeamSummaryPage({
@@ -16,7 +16,7 @@ class CreateTeamSummaryPage extends StatelessWidget {
     required this.teamId,
     required this.teamName,
     required this.teamTag,
-    this.description, // Optional description
+    this.description,
     required this.selectedContacts,
   });
 
@@ -25,18 +25,23 @@ class CreateTeamSummaryPage extends StatelessWidget {
       List<String> memberIds = selectedContacts.map((contact) => contact.uid).toList();
       List<String> adminIds = [selectedContacts.first.uid]; // First contact is admin
 
-      // Get all members' full user data asynchronously
       List<UserModel> members = await Future.wait(
         memberIds.map((id) => UserDatabaseService(uid: id).getUserData())
       );
 
-      // Create roles with permissions
+      // Get admin users directly from adminIds
+      List<UserModel> admins = await Future.wait(
+        adminIds.map((id) => UserDatabaseService(uid: id).getUserData())
+      );
+
+      // Create roles
       var roles = {
-        'admins': members.where((user) => adminIds.contains(user.uid)).map((user) => user.uid!).toList(),
-        'members': members.map((user) => user.uid!).toList(),
+        'admins': admins.map((user) => user.uid!).toSet().toList(),
+        'members': members.map((user) => user.uid!).toSet().toList(),
       };
 
-      // Create team instance
+      print('Roles before saving: $roles');
+
       Team newTeam = Team(
         id: teamId,
         name: teamName,
@@ -46,29 +51,16 @@ class CreateTeamSummaryPage extends StatelessWidget {
         roles: roles,
       );
 
-      // Store to Firestore (initial creation)
       await newTeam.saveToFirestore();
 
-      // Add creator to both admins and members without duplication
-      await newTeam.addCreator(UserModel(
-        uid: selectedContacts.first.uid,
-        name: selectedContacts.first.name,
-        phoneNumber: '', // You might need to fetch this information
-        email: selectedContacts.first.email,
-        createdAt: Timestamp.now(),
-      ));
-
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Team successfully created!'),
         duration: Duration(seconds: 2),
       ));
 
-      // Navigate back to the team list after a delay
       await Future.delayed(const Duration(seconds: 1));
       Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
-      // Handle errors
       print('Error creating team: $e');
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Failed to create team.'),
@@ -78,14 +70,14 @@ class CreateTeamSummaryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context); // Get current theme
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Create Team Summary', style: theme.textTheme.headlineSmall),
         actions: [
           IconButton(
-            icon: const Icon(Icons.done_rounded), // Done icon
+            icon: const Icon(Icons.done_rounded),
             onPressed: () {
               _createTeamInFirestore(context);
             },
@@ -115,7 +107,7 @@ class CreateTeamSummaryPage extends StatelessWidget {
                 theme: theme,
                 leading: Icons.admin_panel_settings,
               ),
-              backgroundColor: theme.colorScheme.surfaceVariant,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
               context: context,
             ),
             _buildSection(
@@ -135,7 +127,7 @@ class CreateTeamSummaryPage extends StatelessWidget {
                 },
                 separatorBuilder: (context, index) => const SizedBox(height: 1),
               ),
-              backgroundColor: theme.colorScheme.surfaceVariant,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
               context: context,
             ),
           ],

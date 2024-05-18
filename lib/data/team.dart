@@ -23,27 +23,11 @@ class Team {
       roles[role] = [];
     }
 
+    // Check if user is already in the role
     if (!roles[role]!.contains(user.uid)) {
       roles[role]!.add(user.uid!);
       await updateRolesInFirestore();
     }
-  }
-
-  Future<void> addCreator(UserModel user) async {
-    if (!roles.containsKey('admins')) {
-      roles['admins'] = [];
-    }
-    if (!roles.containsKey('members')) {
-      roles['members'] = [];
-    }
-
-    if (!roles['admins']!.contains(user.uid)) {
-      roles['admins']!.add(user.uid!);
-    }
-    if (!roles['members']!.contains(user.uid)) {
-      roles['members']!.add(user.uid!);
-    }
-    await updateRolesInFirestore();
   }
 
   Future<void> updateRolesInFirestore() async {
@@ -54,6 +38,13 @@ class Team {
   }
 
   Future<void> saveToFirestore() async {
+    // Ensure no duplicate users in roles
+    roles.forEach((role, userIds) {
+      roles[role] = userIds.toSet().toList();
+    });
+
+    print('Roles to save: $roles');
+
     await FirebaseFirestore.instance.collection('teams').doc(id).set({
       'id': id,
       'name': name,
