@@ -24,6 +24,7 @@ class LoginPage extends StatelessWidget {
             children: [
               const SizedBox(height: 50.0), // Add some space
               TextFormField(
+                key: Key('email_field_key'),  // Add key for email field
                 controller: _emailController,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -37,6 +38,7 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 20.0), // Add some space
               TextFormField(
+                key: Key('password_field_key'),  // Add key for password field
                 controller: _passwordController,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -51,6 +53,7 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 30.0), // Add some space
               ElevatedButton(
+                key: Key('login_button_key'),  // Add key for login button
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     final email = _emailController.text.trim();
@@ -90,4 +93,3 @@ class LoginPage extends StatelessWidget {
     );
   }
 }
-

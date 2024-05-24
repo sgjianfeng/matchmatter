@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class UserModel {
   final String? uid;
@@ -15,8 +16,7 @@ class UserModel {
     required this.createdAt,
   });
 
-  factory UserModel.fromDocumentSnapshot(
-      DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory UserModel.fromDocumentSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
     return UserModel(
       uid: doc.id,
       name: doc.data()?['name'] ?? 'Unknown', // Provide a default value or handle null
@@ -65,6 +65,35 @@ class UserDatabaseService {
         email: 'No email', 
         createdAt: Timestamp.now(),
       );
+    }
+  }
+
+  static Future<void> initializeDefaultAdmin() async {
+    final String adminEmail = 'admin@matchmatter.com';
+    final String adminPassword = 'MatchMatter2024';
+    final QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: adminEmail)
+        .get();
+
+    if (snapshot.docs.isEmpty) {
+      // Create default admin user if not exists
+      try {
+        UserCredential userCredential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(email: adminEmail, password: adminPassword);
+
+        await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).set({
+          'name': 'MatchMatterAdmin',
+          'phoneNumber': '1234567890',
+          'email': adminEmail,
+          'createdAt': Timestamp.now(),
+        });
+        print('Default admin user created.');
+      } catch (e) {
+        print('Error creating default admin user: $e');
+      }
+    } else {
+      print('Default admin user already exists.');
     }
   }
 }
