@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:matchmatter/apps/apphub.dart';
 import 'package:matchmatter/data/user.dart';
-import 'app.dart'; // Import the AppModel
 
 class Team {
   final String id;
@@ -106,30 +104,19 @@ class Team {
     Map<String, List<UserModel>> rolesWithUsers = {};
 
     for (var role in roles.entries) {
-      List<UserModel> users = await Future.wait(role.value.map((uid) => UserDatabaseService(uid: uid).getUserData()));
+      List<UserModel> users = await Future.wait(role.value.map((uid) async {
+        UserModel user = await UserDatabaseService(uid: uid).getUserData();
+        print("User fetched for role $role: ${user.email}");
+        return user;
+      }));
       rolesWithUsers[role.key] = users;
     }
 
     return rolesWithUsers;
   }
 
-  /*
-  Initialize default teams: AppHub and MatchHub
-
-  AppHub:
-  - appadminscope: onlyOwnerTeam
-  - appusescope: allowAllRole
-  - members role matches appmodule's appadmins permission
-  - admins and members roles match useappmembers permission
-
-  MatchHub:
-  - appadminscope: allowMultipleAdmin
-  - appusescope: allowAllRole
-  - members role matches appmodule's appadmins permission
-  - admins and members roles match useappmembers permission
-  */
   static Future<void> initializeDefaultTeams() async {
-    final String adminEmail = 'admin@matchmatter.com';
+    const String adminEmail = 'admin@matchmatter.com';
     final QuerySnapshot adminSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .where('email', isEqualTo: adminEmail)
@@ -141,67 +128,5 @@ class Team {
     }
 
     final UserModel adminUser = UserModel.fromDocumentSnapshot(adminSnapshot.docs.first as DocumentSnapshot<Map<String, dynamic>>);
-
-    // Check if AppHub team already exists
-    if (await getTeamData('apphubteam').catchError((_) => null) == null) {
-      Team appHubTeam = Team(
-        id: 'apphubteam',
-        name: 'AppHub Team',
-        description: 'Default team for AppHub',
-        createdAt: Timestamp.now(),
-        tags: ['default', 'apphub'],
-        roles: {
-          'admins': [adminUser.uid!],
-          'members': [adminUser.uid!],
-          'admins_radmin': [adminUser.uid!],
-          'members_radmin': [adminUser.uid!],
-        },
-      );
-      await appHubTeam.saveToFirestore();
-
-      // Initialize AppHub app
-      await AppHub.initializeAppHub();
-    }
-
-    // Check if MatchHub team already exists
-    if (await getTeamData('matchhub').catchError((_) => null) == null) {
-      Team matchHubTeam = Team(
-        id: 'matchhub',
-        name: 'MatchHub',
-        description: 'Default team for MatchHub',
-        createdAt: Timestamp.now(),
-        tags: ['default', 'matchhub'],
-        roles: {
-          'admins': [adminUser.uid!],
-          'members': [adminUser.uid!],
-          'admins_radmin': [adminUser.uid!],
-          'members_radmin': [adminUser.uid!],
-        },
-      );
-      await matchHubTeam.saveToFirestore();
-
-      // Update MatchHub permissions
-      AppModel matchHub = AppModel(
-        id: 'matchhub',
-        name: 'MatchHub',
-        ownerTeam: 'matchhub',
-        appAdminScope: AppAdminScope.allowMultipleAdmin,
-        appUseScope: AppUseScope.allowAllRole,
-        permissions: {
-          'appadmins': ['approve_app', 'reject_app', 'suspend_app', 'delete_app'],
-          'useappadmins': ['add_app_to_role', 'stop_app', 'delete_app'],
-          'appmembers': ['use_app_functionality'],
-        },
-        meta: {}, // Initialize with empty meta, can be filled as needed
-      );
-
-      // Match MatchHub members role with appadmins permission
-      await matchHub.addRoleToApp('members', ['approve_app', 'reject_app', 'suspend_app', 'delete_app']);
-      // Assign useappadmins to all {role}_radmin
-      await matchHub.addRoleToApp('admins_radmin', ['add_app_to_role', 'stop_app', 'delete_app']);
-      await matchHub.addRoleToApp('members_radmin', ['add_app_to_role', 'stop_app', 'delete_app']);
-      
-      await AppModel.addDefaultPermissions(matchHub);
-    }
   }
 }

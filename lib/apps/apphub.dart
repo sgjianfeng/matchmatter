@@ -20,7 +20,7 @@ import 'package:matchmatter/data/team.dart';
 class AppHub {
   static Future<void> initializeAppHub() async {
     // Create AppHub team if it does not exist
-    final String appHubTeamId = 'apphubteam';
+    const String appHubTeamId = 'apphubteam';
     Team? appHubTeam;
     try {
       appHubTeam = await Team.getTeamData(appHubTeamId);

@@ -7,10 +7,10 @@ class TeamProfilePage extends StatelessWidget {
   final Map<String, List<UserModel>> roles;
 
   const TeamProfilePage({
-    Key? key,
+    super.key,
     required this.team,
     required this.roles,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -49,16 +49,16 @@ class TeamProfilePage extends StatelessWidget {
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Admins',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             ..._buildRoleSection(roles['admins'], context),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Members',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             ..._buildRoleSection(roles['members'], context),
@@ -78,6 +78,7 @@ class TeamProfilePage extends StatelessWidget {
     return users
         .where((user) => !excludeUids.contains(user.uid))
         .map((user) {
+      print("Displaying user: ${user.name}, email: ${user.email}");
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -25,6 +25,16 @@ class UserModel {
       createdAt: doc['createdAt'],
     );
   }
+
+  factory UserModel.fromFirebaseUser(User user) {
+    return UserModel(
+      uid: user.uid,
+      name: user.displayName ?? 'Unknown',
+      phoneNumber: user.phoneNumber ?? 'No phone number',
+      email: user.email ?? 'No email',
+      createdAt: Timestamp.now(), // Assuming the creation date is now
+    );
+  }
 }
 
 class UserDatabaseService {
@@ -58,42 +68,64 @@ class UserDatabaseService {
           docSnapshot as DocumentSnapshot<Map<String, dynamic>>;
       return UserModel.fromDocumentSnapshot(doc);
     } else {
-      return UserModel(
-        uid: '', 
-        name: 'Unknown', 
-        phoneNumber: 'No phone number', 
-        email: 'No email', 
-        createdAt: Timestamp.now(),
-      );
+      // Fallback in case the user data is not found in Firestore
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        return UserModel.fromFirebaseUser(user);
+      } else {
+        return UserModel(
+          uid: '',
+          name: 'Unknown',
+          phoneNumber: 'No phone number',
+          email: 'No email',
+          createdAt: Timestamp.now(),
+        );
+      }
     }
   }
 
-  static Future<void> initializeDefaultAdmin() async {
-    final String adminEmail = 'admin@matchmatter.com';
-    final String adminPassword = 'MatchMatter2024';
-    final QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: adminEmail)
-        .get();
+  static Future<bool> initializeDefaultAdmin() async {
+    const String adminEmail = 'admin@matchmatter.com';
+    const String adminPassword = 'MatchMatter2024';
 
-    if (snapshot.docs.isEmpty) {
-      // Create default admin user if not exists
+    User? currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null) {
       try {
-        UserCredential userCredential = await FirebaseAuth.instance
-            .createUserWithEmailAndPassword(email: adminEmail, password: adminPassword);
+        final QuerySnapshot snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: adminEmail)
+            .get();
 
-        await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).set({
-          'name': 'MatchMatterAdmin',
-          'phoneNumber': '1234567890',
-          'email': adminEmail,
-          'createdAt': Timestamp.now(),
-        });
-        print('Default admin user created.');
+        if (snapshot.docs.isEmpty) {
+          // Sign out current user
+          await FirebaseAuth.instance.signOut();
+
+          // Create default admin user if not exists
+          UserCredential userCredential = await FirebaseAuth.instance
+              .createUserWithEmailAndPassword(email: adminEmail, password: adminPassword);
+
+          await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).set({
+            'name': 'MatchMatterAdmin',
+            'phoneNumber': '1234567890',
+            'email': adminEmail,
+            'createdAt': Timestamp.now(),
+          });
+          print('Default admin user created.');
+
+          // Return true indicating admin was created
+          return true;
+        } else {
+          print('Default admin user already exists.');
+          return false;
+        }
       } catch (e) {
-        print('Error creating default admin user: $e');
+        print('Error checking/creating default admin user: $e');
+        return false;
       }
     } else {
-      print('Default admin user already exists.');
+      print('No user logged in, skipping admin initialization.');
+      return false;
     }
   }
 }

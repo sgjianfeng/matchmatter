@@ -69,7 +69,7 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
     return _firestore.collection('teams').snapshots().asyncMap((snapshot) async {
       List<Team> userTeams = [];
       for (var doc in snapshot.docs) {
-        var teamData = doc.data() as Map<String, dynamic>;
+        var teamData = doc.data();
         var rolesData = Map<String, List<dynamic>>.from(teamData['roles'] ?? {});
 
         bool userInTeam = rolesData.entries.any((entry) => entry.value.contains(currentUser!.uid));
