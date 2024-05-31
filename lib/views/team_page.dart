@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:matchmatter/data/app.dart';
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
-import 'package:matchmatter/views/team_profile_page.dart';
+import 'package:matchmatter/providers/bottom_navigation_provider.dart';
 import 'package:provider/provider.dart';
-import '../providers/bottom_navigation_provider.dart';
+import 'package:matchmatter/views/apps_page.dart';
+import 'package:matchmatter/views/team_profile_page.dart';
 
 class TeamPage extends StatefulWidget {
   final Team team;
@@ -63,7 +65,7 @@ class _TeamPageState extends State<TeamPage> {
                 children: [
                   _buildMessagesTab(),
                   _buildChatsTab(),
-                  _buildAppsTab(),
+                  const AppsPage(),  // 调用 AppsPage
                   TeamProfilePage(
                     team: widget.team,
                     roles: snapshot.data!,
@@ -107,9 +109,5 @@ class _TeamPageState extends State<TeamPage> {
         // Add chat-related content here
       ],
     );
-  }
-
-  Widget _buildAppsTab() {
-    return const Center(child: Text('Apps content goes here'));
   }
 }

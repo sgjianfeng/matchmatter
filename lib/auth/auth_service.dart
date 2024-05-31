@@ -40,7 +40,7 @@ class AuthService {
       }
     } catch (e) {
       print('Error signing up: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -53,7 +53,7 @@ class AuthService {
       return result.user;
     } catch (e) {
       print('Error signing in: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -62,7 +62,7 @@ class AuthService {
       return await _auth.signOut();
     } catch (e) {
       print('Error signing out: $e');
-      throw e;
+      rethrow;
     }
   }
 }

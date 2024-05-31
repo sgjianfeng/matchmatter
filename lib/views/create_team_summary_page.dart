@@ -23,20 +23,18 @@ class CreateTeamSummaryPage extends StatelessWidget {
   Future<void> _createTeamInFirestore(BuildContext context) async {
     try {
       List<String> memberIds = selectedContacts.map((contact) => contact.uid).toList();
-      List<String> adminIds = [selectedContacts.first.uid]; // First contact is admin
+      String adminId = selectedContacts.first.uid; // First contact is admin
 
       List<UserModel> members = await Future.wait(
         memberIds.map((id) => UserDatabaseService(uid: id).getUserData())
       );
 
-      // Get admin users directly from adminIds
-      List<UserModel> admins = await Future.wait(
-        adminIds.map((id) => UserDatabaseService(uid: id).getUserData())
-      );
+      // Get admin user directly from adminId
+      UserModel admin = await UserDatabaseService(uid: adminId).getUserData();
 
       // Create roles
       var roles = {
-        'admins': admins.map((user) => user.uid!).toSet().toList(),
+        'admins': [admin.uid!],
         'members': members.map((user) => user.uid!).toSet().toList(),
       };
 
@@ -51,7 +49,7 @@ class CreateTeamSummaryPage extends StatelessWidget {
         roles: roles,
       );
 
-      await newTeam.saveToFirestore();
+      await newTeam.saveToFirestore(admin.uid!);
 
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Team successfully created!'),

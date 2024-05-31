@@ -39,13 +39,19 @@ class _SignUpPageState extends State<SignUpPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Creating user...')),
         );
-        final UserCredential userCredential =
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text,
-          password: _passwordController.text,
+        // final UserCredential userCredential =
+        //     await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        //   email: _emailController.text,
+        //   password: _passwordController.text,
+        // );
+
+        // final User? user = userCredential.user;
+
+        User? user = await _authService.signUpWithEmailAndPassword(
+          _emailController.text,
+          _passwordController.text,
         );
 
-        final User? user = userCredential.user;
         if (user != null) {
           print('User created, updating user data...');
           ScaffoldMessenger.of(context).showSnackBar(

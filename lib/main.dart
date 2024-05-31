@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:matchmatter/auth/sign_up_page.dart';
-import 'package:matchmatter/data/user.dart';
 import 'package:matchmatter/views/teams_page.dart';
 import 'package:provider/provider.dart';
 

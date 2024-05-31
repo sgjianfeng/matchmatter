@@ -2,18 +2,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class UserModel {
-  final String? uid;
+  final String uid;
   final String name;
-  final String phoneNumber;
+  final String? phoneNumber;
   final String email;
-  final Timestamp createdAt;
+  final Timestamp? createdAt;
 
   UserModel({
     required this.uid,
-    required this.name,
-    required this.phoneNumber,
-    required this.email,
-    required this.createdAt,
+     this.name = 'Unknown',
+     this.phoneNumber = 'No phone number',
+     this.email ='No email',
+     this.createdAt,
   });
 
   factory UserModel.fromDocumentSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -113,10 +113,13 @@ class UserDatabaseService {
           });
           print('Default admin user created.');
 
+          //await Team.initializeDefaultTeams();
+
           // Return true indicating admin was created
           return true;
         } else {
           print('Default admin user already exists.');
+          //await Team.initializeDefaultTeams();
           return false;
         }
       } catch (e) {
