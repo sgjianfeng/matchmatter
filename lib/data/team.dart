@@ -126,7 +126,7 @@ class Team {
     await addPermissionToRole(
       permission,
       role,
-      (permission, role, userId) async {
+      ({required Permission permission, required Role role, String? userId}) async {
         return ApproveModel(
           approverId: '', // No specific approver ID needed here
           approverRole: role,
@@ -139,7 +139,7 @@ class Team {
           ),
           data: {},
         );
-      } as ApproveCallback,
+      },
     );
   }
 
@@ -158,9 +158,9 @@ class Team {
       permission,
       userRole,
       userId,
-      (permission, role, userId) async {
+      ({required Permission permission, required Role role, String? userId}) async {
         return ApproveModel(
-          approverId: userId,
+          approverId: userId ?? '', // Handle nullable userId
           approverRole: userRole,
           status: Status(
             ownApp: true,
@@ -171,7 +171,7 @@ class Team {
           ),
           data: {},
         );
-      } as ApproveCallback,
+      },
     );
   }
 

@@ -326,40 +326,49 @@ class AppModel {
     required OwnerTeamModel ownerTeam,
     required String creator,
   }) async {
-    // Check if the app with the given ID already exists
-    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('apps').doc(id).get();
-    
-    if (doc.exists) {
-      // If the app exists, check if the owner team ID matches
-      AppModel existingApp = AppModel.fromFirestore(doc);
-      if (existingApp.ownerTeam.id == ownerTeam.id) {
-        return existingApp;
-      } else {
-        throw Exception('App ID already exists with a different owner team ID.');
+    if (appOwnerScope == AppOwnerScope.sole) {
+      // Check if an app with the given ID already exists
+      DocumentSnapshot doc = await FirebaseFirestore.instance.collection('apps').doc(id).get();
+      
+      if (doc.exists) {
+        throw Exception('An app with the given ID already exists.');
       }
     } else {
-      // If the app does not exist, create a new AppModel instance
-      AppModel app = AppModel(
-        id: id,
-        name: name,
-        appownerscope: appOwnerScope,
-        appuserscope: appUserScope,
-        scopeData: scopeData,
-        ownerTeam: ownerTeam,
-        permissions: [], // Initialize with an empty list of permissions
-        creator: creator,
-        createdAt: Timestamp.now(),
-      );
+      // Check if an app with the given ID and ownerTeam ID already exists
+      QuerySnapshot query = await FirebaseFirestore.instance
+          .collection('apps')
+          .where('id', isEqualTo: id)
+          .where('ownerTeam.id', isEqualTo: ownerTeam.id)
+          .get();
 
-      // Save the new app to Firestore
-      await app.saveToFirestore();
-
-      // Add default permissions to the newly created app
-      await addDefaultPermissions(app);
-
-      // Return the newly created AppModel
-      return app;
+      if (query.docs.isNotEmpty) {
+        // If the app exists, return the existing AppModel
+        DocumentSnapshot doc = query.docs.first;
+        return AppModel.fromFirestore(doc);
+      }
     }
+
+    // If the app does not exist, create a new AppModel instance
+    AppModel app = AppModel(
+      id: id,
+      name: name,
+      appownerscope: appOwnerScope,
+      appuserscope: appUserScope,
+      scopeData: scopeData,
+      ownerTeam: ownerTeam,
+      permissions: [], // Initialize with an empty list of permissions
+      creator: creator,
+      createdAt: Timestamp.now(),
+    );
+
+    // Save the new app to Firestore
+    await app.saveToFirestore();
+
+    // Add default permissions to the newly created app
+    await addDefaultPermissions(app);
+
+    // Return the newly created AppModel
+    return app;
   }
 }
 
@@ -557,44 +566,4 @@ Future<void> addPermissionToUser(
   }
 
   await userPermissionsDoc.set(userPermissions);
-}
-
-Future<AppModel> createOrGetApp({
-  required String id,
-  required String name,
-  required AppOwnerScope appOwnerScope,
-  required AppUserScope appUserScope,
-  required dynamic scopeData,
-  required OwnerTeamModel ownerTeam,
-  required String creator,
-}) async {
-  // Check if the app with the given ID already exists
-  DocumentSnapshot doc = await FirebaseFirestore.instance.collection('apps').doc(id).get();
-  
-  if (doc.exists) {
-    // If the app exists, return the existing AppModel
-    return AppModel.fromFirestore(doc);
-  } else {
-    // If the app does not exist, create a new AppModel instance
-    AppModel app = AppModel(
-      id: id,
-      name: name,
-      appownerscope: appOwnerScope,
-      appuserscope: appUserScope,
-      scopeData: scopeData,
-      ownerTeam: ownerTeam,
-      permissions: [], // Initialize with an empty list of permissions
-      creator: creator,
-      createdAt: Timestamp.now(),
-    );
-
-    // Save the new app to Firestore
-    await app.saveToFirestore();
-
-    // Add default permissions to the newly created app
-    await addDefaultPermissions(app);
-
-    // Return the newly created AppModel
-    return app;
-  }
 }

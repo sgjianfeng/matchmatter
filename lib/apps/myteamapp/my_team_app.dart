@@ -21,6 +21,7 @@ class MyTeamApp extends AppModel {
     required String creator,
     required OwnerTeamModel ownerTeam,
   }) async {
+    // Create or get the associated AppModel
     AppModel app = await AppModel.createOrGet(
       id: 'myteamapp',
       name: 'MyTeamApp',
@@ -31,9 +32,10 @@ class MyTeamApp extends AppModel {
       creator: creator,
     );
 
+    // Convert AppModel to MyTeamApp
     MyTeamApp myTeamApp = MyTeamApp.fromAppModel(app);
 
-    // Add default adminrole permission to MyTeamApp
+    // Add default adminrole permission to MyTeamApp if not already added
     await myTeamApp.addDefaultAdminRolePermission();
 
     return myTeamApp;
@@ -44,22 +46,46 @@ class MyTeamApp extends AppModel {
     return MyTeamApp(
       creator: app.creator,
       ownerTeam: app.ownerTeam,
-    );
+    )..permissions.addAll(app.permissions);
   }
 
   Future<void> addDefaultAdminRolePermission() async {
-    permissions.add(
-      Permission(
-        id: 'adminrole',
-        name: 'AdminRole',
-        appId: id,
-        actions: [],
-        teamScope: PermissionTeamScope.ownerteam,
-        roleScope: PermissionRoleScope.anyrole,
-        userScope: PermissionUserScope.anyuser,
-        data: {},
-      ),
-    );
-    await saveToFirestore();
+    // Check if the admin role permission is already added
+    bool hasAdminRolePermission = permissions.any((perm) => perm.id == 'adminrole');
+    if (!hasAdminRolePermission) {
+      permissions.add(
+        Permission(
+          id: 'adminrole',
+          name: 'AdminRole',
+          appId: id,
+          actions: [],
+          teamScope: PermissionTeamScope.ownerteam,
+          roleScope: PermissionRoleScope.anyrole,
+          userScope: PermissionUserScope.anyuser,
+          data: {},
+        ),
+      );
+      await saveToFirestore();
+    }
+  }
+
+  @override
+  Future<void> saveToFirestore() async {
+    await FirebaseFirestore.instance.collection('myteamapps').doc(id).set(toFirestore());
+  }
+
+  @override
+  Map<String, dynamic> toFirestore() {
+    return {
+      'id': id,
+      'name': name,
+      'appownerscope': appownerscope.toString().split('.').last,
+      'appuserscope': appuserscope.toString().split('.').last,
+      'scopeData': scopeData,
+      'ownerTeam': ownerTeam.toMap(),
+      'permissions': permissions.map((e) => e.toMap()).toList(),
+      'creator': creator,
+      'createdAt': createdAt,
+    };
   }
 }
