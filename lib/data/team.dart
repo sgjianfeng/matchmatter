@@ -3,6 +3,48 @@ import 'package:matchmatter/apps/myteamapp/my_team_app.dart';
 import 'package:matchmatter/data/app.dart';
 import 'package:matchmatter/data/user.dart';
 
+class RoleModel {
+  final String id;
+  final String? description;
+  final String teamId;
+  final String? creatorId;
+  final Map<String, dynamic> data;
+  String _name;
+
+  RoleModel({
+    required this.id,
+    String? name,
+    this.description,
+    required this.teamId,
+    this.creatorId,
+    required this.data,
+  }) : _name = name ?? id; // 如果 name 没有提供，默认设置为 id
+
+  String get name => _name; // 获取 name
+
+  factory RoleModel.fromMap(Map<String, dynamic> data) {
+    return RoleModel(
+      id: data['id'],
+      name: data['name'],
+      description: data['description'],
+      teamId: data['teamId'],
+      creatorId: data['creatorId'],
+      data: data['data'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': _name,
+      'description': description,
+      'teamId': teamId,
+      'creatorId': creatorId,
+      'data': data,
+    };
+  }
+}
+
 class Team {
   final String id;
   final String name;
@@ -20,10 +62,11 @@ class Team {
     required this.roles,
   });
 
-  Future<void> addMember(UserModel user, {required String role, required String approverId}) async {
+  Future<void> addMember(UserModel user,
+      {required String role, required String approverId}) async {
     roles.putIfAbsent(role, () => []);
     if (!roles[role]!.contains(user.uid)) {
-      Role roleModel = Role(
+      RoleModel roleModel = RoleModel(
         id: role,
         name: role,
         teamId: id,
@@ -31,18 +74,20 @@ class Team {
         data: {},
       );
 
-      bool approverHasAdminRole = await hasAdminRolePermission(roleModel, approverId);
+      bool approverHasAdminRole =
+          await hasAdminRolePermission(roleModel, approverId);
       if (!approverHasAdminRole) {
         throw Exception('Approver does not have the admin role permission.');
       }
-      roles[role]!.add(user.uid!);
+      roles[role]!.add(user.uid);
     }
 
     await _updateRolesInFirestore();
   }
 
   Future<void> _updateRolesInFirestore() async {
-    DocumentReference teamRef = FirebaseFirestore.instance.collection('teams').doc(id);
+    DocumentReference teamRef =
+        FirebaseFirestore.instance.collection('teams').doc(id);
     await teamRef.update({'roles': roles});
   }
 
@@ -56,10 +101,10 @@ class Team {
 
     MyTeamApp app = await MyTeamApp.createOrGet(
       creator: creatorId,
-      ownerTeam: OwnerTeamModel(id: id, data: {}),
+      ownerTeamId: id,
     );
 
-    await _assignPermissions(app);
+    await _assignPermissions(app, creatorId);
   }
 
   void _ensureUniqueUsersInRoles() {
@@ -69,7 +114,8 @@ class Team {
   }
 
   Future<void> _checkIfTeamExists() async {
-    final DocumentSnapshot teamSnapshot = await FirebaseFirestore.instance.collection('teams').doc(id).get();
+    final DocumentSnapshot teamSnapshot =
+        await FirebaseFirestore.instance.collection('teams').doc(id).get();
     if (teamSnapshot.exists) {
       print('Team with ID $id already exists.');
       return;
@@ -80,7 +126,8 @@ class Team {
     roles['admins'] = roles['admins'] ?? [];
     roles['members'] = roles['members'] ?? [];
     if (!roles['admins']!.contains(creatorId)) roles['admins']!.add(creatorId);
-    if (!roles['members']!.contains(creatorId)) roles['members']!.add(creatorId);
+    if (!roles['members']!.contains(creatorId))
+      roles['members']!.add(creatorId);
   }
 
   Future<void> _saveTeamToFirestore() async {
@@ -94,47 +141,80 @@ class Team {
     });
   }
 
-  Future<void> _assignPermissions(MyTeamApp app) async {
+  Future<void> _assignPermissions(MyTeamApp app, String? creatorId) async {
     for (String role in roles.keys) {
       List<String> userIds = roles[role]!;
       if (userIds.isNotEmpty) {
-        String creatorId = userIds.first;
+        creatorId = creatorId ?? userIds.first;
 
         if (role == 'admins') {
-          await _assignPermissionToRole(app, 'appadmins', role);
+          await _assignPermissionToRole(app, 'appadmins', role, creatorId);
         } else if (role == 'members') {
-          await _assignPermissionToRole(app, 'appusers', role);
+          await _assignPermissionToRole(app, 'appusers', role, creatorId);
         }
 
+        // Create RoleModel for the current role
+        RoleModel roleModel = RoleModel(
+          id: role,
+          name: role,
+          teamId: id,
+          creatorId: creatorId,
+          data: {},
+        );
+
         // Assign adminrole to the creator of each role
-        await _assignPermissionToUser(app, 'adminrole', creatorId);
+        await _assignPermissionToUser(app, 'adminrole', creatorId, roleModel);
       }
     }
   }
 
-  Future<void> _assignPermissionToRole(MyTeamApp app, String permissionId, String roleName) async {
-    Permission permission = app.permissions.firstWhere((perm) => perm.id == permissionId);
-    
-    Role role = Role(
+  Future<void> _assignPermissionToRole(MyTeamApp app, String permissionId,
+      String roleName, String creatorId) async {
+    Permission permission =
+        app.permissions.firstWhere((perm) => perm.id == permissionId);
+
+    RoleModel role = RoleModel(
       id: roleName,
       name: roleName,
       teamId: id,
-      creatorId: '', // No specific creator ID needed here
+      creatorId: creatorId,
       data: {},
     );
 
     await addPermissionToRole(
       permission,
       role,
-      ({required Permission permission, required Role role, String? userId}) async {
+      (
+          {required Permission permission,
+          required RoleModel role,
+          String? userId}) async {
         return ApproveModel(
-          approverId: '', // No specific approver ID needed here
+          approverId: creatorId,
           approverRole: role,
+          status: Status(permissionRole: true),
+          data: {},
+        );
+      },
+    );
+  }
+
+  Future<void> _assignPermissionToUser(MyTeamApp app, String permissionId,
+      String userId, RoleModel userRole) async {
+    Permission permission =
+        app.permissions.firstWhere((perm) => perm.id == permissionId);
+
+    await addPermissionToUser(
+      permission,
+      userRole,
+      userId,
+      (
+          {required Permission permission,
+          required RoleModel role,
+          String? userId}) async {
+        return ApproveModel(
+          approverId: userId ?? '',
+          approverRole: userRole,
           status: Status(
-            ownApp: true,
-            useApp: true,
-            permissionTeam: true,
-            permissionRole: true,
             permissionUser: true,
           ),
           data: {},
@@ -143,36 +223,56 @@ class Team {
     );
   }
 
-  Future<void> _assignPermissionToUser(MyTeamApp app, String permissionId, String userId) async {
-    Permission permission = app.permissions.firstWhere((perm) => perm.id == permissionId);
-    
-    Role userRole = Role(
-      id: permissionId,
-      name: permissionId,
-      teamId: id,
-      creatorId: userId,
-      data: {},
-    );
+  Future<List<RoleModel>> getAllRoles() async {
+    List<RoleModel> allRoles = [];
 
-    await addPermissionToUser(
-      permission,
-      userRole,
-      userId,
-      ({required Permission permission, required Role role, String? userId}) async {
-        return ApproveModel(
-          approverId: userId ?? '', // Handle nullable userId
-          approverRole: userRole,
-          status: Status(
-            ownApp: true,
-            useApp: true,
-            permissionTeam: true,
-            permissionRole: true,
-            permissionUser: true,
-          ),
-          data: {},
-        );
-      },
-    );
+    for (String roleId in roles.keys) {
+      // 从 Firestore 获取 role 的详细信息
+      DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance
+          .collection('roles')
+          .doc(roleId)
+          .get();
+
+      if (roleSnapshot.exists) {
+        Map<String, dynamic> roleData =
+            roleSnapshot.data() as Map<String, dynamic>;
+        // 确保 roleData 中有必要的字段
+        roleData['id'] = roleId;
+        roleData['name'] = roleData['name'] ?? roleId;
+        roleData['description'] = roleData['description'] ?? '';
+        RoleModel role = RoleModel.fromMap(roleData);
+        allRoles.add(role);
+      }
+    }
+
+    return allRoles;
+  }
+
+  Future<List<RoleModel>> getUserRoles(String userId) async {
+    List<RoleModel> userRoles = [];
+
+    for (String roleId in roles.keys) {
+      if (roles[roleId]!.contains(userId)) {
+        // 从 Firestore 获取 role 的详细信息
+        DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance
+            .collection('roles')
+            .doc(roleId)
+            .get();
+
+        if (roleSnapshot.exists) {
+          Map<String, dynamic> roleData =
+              roleSnapshot.data() as Map<String, dynamic>;
+          // 确保 roleData 中有必要的字段
+          roleData['id'] = roleId;
+          roleData['name'] = roleData['name'] ?? roleId;
+          roleData['description'] = roleData['description'] ?? '';
+          RoleModel role = RoleModel.fromMap(roleData);
+          userRoles.add(role);
+        }
+      }
+    }
+
+    return userRoles;
   }
 
   @override
@@ -181,7 +281,8 @@ class Team {
   }
 
   static Future<Team> getTeamData(String teamId) async {
-    DocumentSnapshot<Map<String, dynamic>> docSnapshot = await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
+    DocumentSnapshot<Map<String, dynamic>> docSnapshot =
+        await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
     if (!docSnapshot.exists) {
       throw Exception('Team does not exist');
     }
@@ -195,11 +296,13 @@ class Team {
       description: data['description'] ?? 'No description available',
       createdAt: data['createdAt'] ?? Timestamp.now(),
       tags: data['tags']?.cast<String>() ?? [],
-      roles: rolesData.map((key, value) => MapEntry(key, List<String>.from(value))),
+      roles: rolesData
+          .map((key, value) => MapEntry(key, List<String>.from(value))),
     );
   }
 
-  static Future<Map<String, List<UserModel>>> getTeamRoles(Map<String, List<String>> roles) async {
+  static Future<Map<String, List<UserModel>>> getTeamRoles(
+      Map<String, List<String>> roles) async {
     Map<String, List<UserModel>> rolesWithUsers = {};
 
     for (var role in roles.entries) {
@@ -214,23 +317,26 @@ class Team {
     return rolesWithUsers;
   }
 
-  Future<bool> hasAdminRolePermission(Role roleModel, String userId) async {
+  Future<bool> hasAdminRolePermission(
+      RoleModel roleModel, String userId) async {
     if (!roles[roleModel.id]!.contains(userId)) {
       return false;
     }
 
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('userPermissions').doc(userId).get();
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('userPermissions')
+        .doc(userId)
+        .get();
     if (userDoc.exists) {
       var userData = userDoc.data() as Map<String, dynamic>;
       var permissions = userData['permissions'] as Map<String, dynamic>?;
       if (permissions != null && permissions['myteamapp'] != null) {
         var appPermissions = permissions['myteamapp'] as List<dynamic>;
         return appPermissions.any((perm) =>
-          perm['permissionName'] == 'adminrole' &&
-          perm['teamId'] == id &&
-          perm['roleId'] == roleModel.id &&
-          perm['userId'] == userId
-        );
+            perm['permissionId'] == 'adminrole' &&
+            perm['teamId'] == id &&
+            perm['roleId'] == roleModel.id &&
+            perm['userId'] == userId);
       }
     }
     return false;

@@ -65,7 +65,7 @@ class _TeamPageState extends State<TeamPage> {
                 children: [
                   _buildMessagesTab(),
                   _buildChatsTab(),
-                  const AppsPage(),  // 调用 AppsPage
+                  AppsPage(teamId: widget.team.id),  // Pass teamId to AppsPage
                   TeamProfilePage(
                     team: widget.team,
                     roles: snapshot.data!,

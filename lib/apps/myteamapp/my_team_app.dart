@@ -1,25 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:matchmatter/data/app.dart';
+import 'package:matchmatter/data/user.dart';
 
 class MyTeamApp extends AppModel {
   MyTeamApp({
-    required String creator,
-    required OwnerTeamModel ownerTeam,
+    required String super.creator,
+    required super.ownerTeamId,
   }) : super(
           id: 'myteamapp',
           name: 'MyTeamApp',
-          appownerscope: AppOwnerScope.any,
-          appuserscope: AppUserScope.ownerteam,
+          appOwnerScope: AppOwnerScope.any,
+          appUserScope: AppUserScope.ownerteam,
           scopeData: {},
-          ownerTeam: ownerTeam,
-          permissions: [], // Initialize with an empty list of permissions
-          creator: creator,
+          permissions: [],
           createdAt: Timestamp.now(),
         );
 
   static Future<MyTeamApp> createOrGet({
     required String creator,
-    required OwnerTeamModel ownerTeam,
+    required String ownerTeamId,
   }) async {
     // Create or get the associated AppModel
     AppModel app = await AppModel.createOrGet(
@@ -28,14 +27,14 @@ class MyTeamApp extends AppModel {
       appOwnerScope: AppOwnerScope.any,
       appUserScope: AppUserScope.ownerteam,
       scopeData: {},
-      ownerTeam: ownerTeam,
+      ownerTeamId: ownerTeamId,
       creator: creator,
     );
 
     // Convert AppModel to MyTeamApp
     MyTeamApp myTeamApp = MyTeamApp.fromAppModel(app);
 
-    // Add default adminrole permission to MyTeamApp if not already added
+    // Add default admin role permission if not already added
     await myTeamApp.addDefaultAdminRolePermission();
 
     return myTeamApp;
@@ -44,8 +43,8 @@ class MyTeamApp extends AppModel {
   // Factory method to create a MyTeamApp from an AppModel
   factory MyTeamApp.fromAppModel(AppModel app) {
     return MyTeamApp(
-      creator: app.creator,
-      ownerTeam: app.ownerTeam,
+      creator: app.creator ?? UserDatabaseService.getCurrentUserId(),
+      ownerTeamId: app.ownerTeamId,
     )..permissions.addAll(app.permissions);
   }
 
@@ -58,7 +57,6 @@ class MyTeamApp extends AppModel {
           id: 'adminrole',
           name: 'AdminRole',
           appId: id,
-          actions: [],
           teamScope: PermissionTeamScope.ownerteam,
           roleScope: PermissionRoleScope.anyrole,
           userScope: PermissionUserScope.anyuser,
@@ -67,25 +65,5 @@ class MyTeamApp extends AppModel {
       );
       await saveToFirestore();
     }
-  }
-
-  @override
-  Future<void> saveToFirestore() async {
-    await FirebaseFirestore.instance.collection('myteamapps').doc(id).set(toFirestore());
-  }
-
-  @override
-  Map<String, dynamic> toFirestore() {
-    return {
-      'id': id,
-      'name': name,
-      'appownerscope': appownerscope.toString().split('.').last,
-      'appuserscope': appuserscope.toString().split('.').last,
-      'scopeData': scopeData,
-      'ownerTeam': ownerTeam.toMap(),
-      'permissions': permissions.map((e) => e.toMap()).toList(),
-      'creator': creator,
-      'createdAt': createdAt,
-    };
   }
 }

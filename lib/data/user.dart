@@ -19,9 +19,9 @@ class UserModel {
   factory UserModel.fromDocumentSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
     return UserModel(
       uid: doc.id,
-      name: doc.data()?['name'] ?? 'Unknown', // Provide a default value or handle null
-      phoneNumber: doc.data()?['phoneNumber'] ?? 'No phone number', // Provide a default value or handle null
-      email: doc.data()?['email'] ?? 'No email', // Provide a default value or handle null
+      name: doc.data()?['name'] ?? 'Unknown',
+      phoneNumber: doc.data()?['phoneNumber'] ?? 'No phone number',
+      email: doc.data()?['email'] ?? 'No email',
       createdAt: doc['createdAt'],
     );
   }
@@ -129,6 +129,15 @@ class UserDatabaseService {
     } else {
       print('No user logged in, skipping admin initialization.');
       return false;
+    }
+  }
+
+  static String getCurrentUserId() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return user.uid;
+    } else {
+      throw Exception('No user is currently logged in');
     }
   }
 }

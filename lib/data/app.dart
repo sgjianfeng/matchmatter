@@ -1,67 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'team.dart'; // Assuming RoleModel is in team.dart
 
-// Enum for the different scopes
-enum AppOwnerScope {
-  sole,
-  any,
-  approved,
-}
+// Enums for different scopes
+enum AppOwnerScope { sole, any, approved }
+enum AppUserScope { ownerteam, any, approved }
+enum PermissionTeamScope { ownerteam, approvedteam, anyteam }
+enum PermissionRoleScope { anyrole, approvedrole }
+enum PermissionUserScope { none, anyuser, approveduser }
 
-enum AppUserScope {
-  ownerteam,
-  any,
-  approved,
-}
-
-enum PermissionTeamScope {
-  ownerteam,
-  approvedteam,
-  anyteam,
-}
-
-enum PermissionRoleScope {
-  anyrole,
-  approvedrole,
-}
-
-enum PermissionUserScope {
-  none,
-  anyuser,
-  approveduser,
-}
-
-// Class for Action
-class ActionModel {
-  final String id;
-  final String? name;
-  final dynamic data;
-
-  ActionModel({
-    required this.id,
-    this.name,
-    this.data,
-  });
-
-  factory ActionModel.fromMap(Map<String, dynamic> data) {
-    return ActionModel(
-      id: data['id'],
-      name: data['name'],
-      data: data['data'],
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'data': data,
-    };
-  }
-}
-
+// Class for ApproveModel
 class ApproveModel {
   final String approverId;
-  final Role approverRole;
+  final RoleModel approverRole;
   final Status status;
   final dynamic data;
 
@@ -75,7 +25,7 @@ class ApproveModel {
   factory ApproveModel.fromMap(Map<String, dynamic> data) {
     return ApproveModel(
       approverId: data['approverId'],
-      approverRole: Role.fromMap(data['approverRole']),
+      approverRole: RoleModel.fromMap(data['approverRole']),
       status: Status.fromMap(data['status']),
       data: data['data'],
     );
@@ -91,6 +41,7 @@ class ApproveModel {
   }
 }
 
+// Class for Status
 class Status {
   bool ownApp;
   bool useApp;
@@ -129,43 +80,40 @@ class Status {
 
 typedef ApproveCallback = Future<ApproveModel> Function({
   required Permission permission,
-  required Role role,
+  required RoleModel role,
   String? userId,
 });
 
 // Class for Permission
 class Permission {
   final String id;
-  final String? name;
   final String appId;
-  final List<ActionModel>? actions;
   final PermissionTeamScope? teamScope;
   final PermissionRoleScope? roleScope;
   final PermissionUserScope? userScope;
   final dynamic data;
+  String _name;
 
   Permission({
     required this.id,
-    this.name,
+    String? name,
     required this.appId,
-    this.actions,
     this.teamScope,
     this.roleScope,
     this.userScope,
     required this.data,
-  });
+  }) : _name = name ?? id; // 如果 name 没有提供，默认设置为 id
+
+  String get name => _name; // 获取 name
 
   factory Permission.fromMap(Map<String, dynamic> data) {
     return Permission(
       id: data['id'],
       name: data['name'],
       appId: data['appId'],
-      actions: (data['actions'] as List<dynamic>).map((e) => ActionModel.fromMap(e)).toList(),
-      teamScope: PermissionTeamScope.values.firstWhere((e) => e.toString() == 'PermissionTeamScope.${data['teamScope']}'),
-      roleScope: PermissionRoleScope.values.firstWhere((e) => e.toString() == 'PermissionRoleScope.${data['roleScope']}'),
-      userScope: data['userScope'] != null
-          ? PermissionUserScope.values.firstWhere((e) => e.toString() == 'PermissionUserScope.${data['userScope']}')
-          : null,
+      teamScope: data['teamScope'] != null ? PermissionTeamScope.values.firstWhere((e) => e.toString() == 'PermissionTeamScope.${data['teamScope']}') : null,
+      roleScope: data['roleScope'] != null ? PermissionRoleScope.values.firstWhere((e) => e.toString() == 'PermissionRoleScope.${data['roleScope']}') : null,
+      userScope: data['userScope'] != null ? PermissionUserScope.values.firstWhere((e) => e.toString() == 'PermissionUserScope.${data['userScope']}') : null,
       data: data['data'],
     );
   }
@@ -173,74 +121,11 @@ class Permission {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'name': name,
+      'name': _name,
       'appId': appId,
-      'actions': actions?.map((e) => e.toMap()).toList(),
-      'teamScope': teamScope.toString().split('.').last,
-      'roleScope': roleScope.toString().split('.').last,
+      'teamScope': teamScope?.toString().split('.').last,
+      'roleScope': roleScope?.toString().split('.').last,
       'userScope': userScope?.toString().split('.').last,
-      'data': data,
-    };
-  }
-}
-
-// Class for Role
-class Role {
-  final String id;
-  final String? name;
-  final String teamId;
-  final String? creatorId;
-  final dynamic data;
-
-  Role({
-    required this.id,
-    this.name,
-    required this.teamId,
-    this.creatorId,
-    required this.data,
-  });
-
-  factory Role.fromMap(Map<String, dynamic> data) {
-    return Role(
-      id: data['id'],
-      name: data['name'],
-      teamId: data['teamId'],
-      creatorId: data['creatorId'],
-      data: data['data'],
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'teamId': teamId,
-      'creatorId': creatorId,
-      'data': data,
-    };
-  }
-}
-
-// Class for Owner Team
-class OwnerTeamModel {
-  final String id;
-  final dynamic data;
-
-  OwnerTeamModel({
-    required this.id,
-    required this.data,
-  });
-
-  factory OwnerTeamModel.fromMap(Map<String, dynamic> data) {
-    return OwnerTeamModel(
-      id: data['id'],
-      data: data['data'],
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
       'data': data,
     };
   }
@@ -250,39 +135,42 @@ class OwnerTeamModel {
 class AppModel {
   final String id;
   final String name;
-  final AppOwnerScope appownerscope;
-  final AppUserScope appuserscope;
+  final AppOwnerScope appOwnerScope;
+  final AppUserScope appUserScope;
   final dynamic scopeData;
-  final OwnerTeamModel ownerTeam;
+  final String ownerTeamId;
   final List<Permission> permissions;
-  final String creator;
+  final String? creator;
   final Timestamp createdAt;
+  final String? description;
 
   AppModel({
     required this.id,
     required this.name,
-    required this.appownerscope,
-    required this.appuserscope,
-    required this.scopeData,
-    required this.ownerTeam,
+    this.appOwnerScope = AppOwnerScope.sole,
+    this.appUserScope = AppUserScope.ownerteam,
+    this.scopeData,
+    required this.ownerTeamId,
     required this.permissions,
-    required this.creator,
-    required this.createdAt,
-  });
+    this.creator,
+    Timestamp? createdAt,
+    this.description,
+  }) : createdAt = createdAt ?? Timestamp.now();
 
   factory AppModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
     return AppModel(
       id: data['id'],
-      name: data['name'],
-      appownerscope: AppOwnerScope.values.firstWhere((e) => e.toString() == 'AppOwnerScope.${data['appownerscope']}'),
-      appuserscope: AppUserScope.values.firstWhere((e) => e.toString() == 'AppUserScope.${data['appuserscope']}'),
+      name: data['name'] ?? data['id'],
+      appOwnerScope: AppOwnerScope.values.firstWhere((e) => e.toString() == 'AppOwnerScope.${data['appOwnerScope']}'),
+      appUserScope: AppUserScope.values.firstWhere((e) => e.toString() == 'AppUserScope.${data['appUserScope']}'),
       scopeData: data['scopeData'],
-      ownerTeam: OwnerTeamModel.fromMap(data['ownerTeam']),
-      permissions: (data['permissions'] as List<dynamic>).map((e) => Permission.fromMap(e)).toList(),
+      ownerTeamId: data['ownerTeamId'],
+      permissions: (data['permissions'] as List<dynamic>).map((e) => Permission.fromMap(e as Map<String, dynamic>)).toList(),
       creator: data['creator'],
-      createdAt: data['createdAt'],
+      createdAt: data['createdAt'] ?? Timestamp.now(),
+      description: data['description'],
     );
   }
 
@@ -290,22 +178,23 @@ class AppModel {
     return {
       'id': id,
       'name': name,
-      'appownerscope': appownerscope.toString().split('.').last,
-      'appuserscope': appuserscope.toString().split('.').last,
+      'appOwnerScope': appOwnerScope.toString().split('.').last,
+      'appUserScope': appUserScope.toString().split('.').last,
       'scopeData': scopeData,
-      'ownerTeam': ownerTeam.toMap(),
+      'ownerTeamId': ownerTeamId,
       'permissions': permissions.map((e) => e.toMap()).toList(),
       'creator': creator,
       'createdAt': createdAt,
+      'description': description,
     };
   }
 
   Future<void> saveToFirestore() async {
-    await FirebaseFirestore.instance.collection('apps').doc(id).set(toFirestore());
+    await FirebaseFirestore.instance.collection('apps').doc('$id-$ownerTeamId').set(toFirestore());
   }
 
-  static Future<AppModel?> getAppData(String appId) async {
-    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('apps').doc(appId).get();
+  static Future<AppModel?> getAppData(String appId, String ownerTeamId) async {
+    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('apps').doc('$appId-$ownerTeamId').get();
     if (doc.exists) {
       return AppModel.fromFirestore(doc);
     }
@@ -319,55 +208,33 @@ class AppModel {
 
   static Future<AppModel> createOrGet({
     required String id,
-    required String name,
-    required AppOwnerScope appOwnerScope,
-    required AppUserScope appUserScope,
-    required dynamic scopeData,
-    required OwnerTeamModel ownerTeam,
-    required String creator,
+    String? name,
+    String? description,
+    AppOwnerScope appOwnerScope = AppOwnerScope.sole,
+    AppUserScope appUserScope = AppUserScope.ownerteam,
+    dynamic scopeData,
+    required String ownerTeamId,
+    String? creator,
   }) async {
-    if (appOwnerScope == AppOwnerScope.sole) {
-      // Check if an app with the given ID already exists
-      DocumentSnapshot doc = await FirebaseFirestore.instance.collection('apps').doc(id).get();
-      
-      if (doc.exists) {
-        throw Exception('An app with the given ID already exists.');
-      }
-    } else {
-      // Check if an app with the given ID and ownerTeam ID already exists
-      QuerySnapshot query = await FirebaseFirestore.instance
-          .collection('apps')
-          .where('id', isEqualTo: id)
-          .where('ownerTeam.id', isEqualTo: ownerTeam.id)
-          .get();
-
-      if (query.docs.isNotEmpty) {
-        // If the app exists, return the existing AppModel
-        DocumentSnapshot doc = query.docs.first;
-        return AppModel.fromFirestore(doc);
-      }
+    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('apps').doc('$id-$ownerTeamId').get();
+    if (doc.exists) {
+      return AppModel.fromFirestore(doc);
     }
 
-    // If the app does not exist, create a new AppModel instance
     AppModel app = AppModel(
       id: id,
-      name: name,
-      appownerscope: appOwnerScope,
-      appuserscope: appUserScope,
+      name: name ?? id,
+      appOwnerScope: appOwnerScope,
+      appUserScope: appUserScope,
       scopeData: scopeData,
-      ownerTeam: ownerTeam,
-      permissions: [], // Initialize with an empty list of permissions
+      ownerTeamId: ownerTeamId,
       creator: creator,
-      createdAt: Timestamp.now(),
+      description: description,
+      permissions: [],
     );
 
-    // Save the new app to Firestore
     await app.saveToFirestore();
-
-    // Add default permissions to the newly created app
     await addDefaultPermissions(app);
-
-    // Return the newly created AppModel
     return app;
   }
 }
@@ -379,7 +246,6 @@ Future<void> addDefaultPermissions(AppModel app) async {
       id: 'appadmins',
       name: 'App Admins',
       appId: app.id,
-      actions: [],
       teamScope: PermissionTeamScope.ownerteam,
       roleScope: PermissionRoleScope.approvedrole,
       userScope: PermissionUserScope.none,
@@ -389,7 +255,6 @@ Future<void> addDefaultPermissions(AppModel app) async {
       id: 'appusers',
       name: 'App Users',
       appId: app.id,
-      actions: [],
       teamScope: PermissionTeamScope.anyteam,
       roleScope: PermissionRoleScope.approvedrole,
       userScope: PermissionUserScope.none,
@@ -402,10 +267,10 @@ Future<void> addDefaultPermissions(AppModel app) async {
 // Function to add permission to a role
 Future<void> addPermissionToRole(
   Permission permission,
-  Role role,
+  RoleModel role,
   ApproveCallback approveCallback,
 ) async {
-  final appDoc = FirebaseFirestore.instance.collection('apps').doc(permission.appId);
+  final appDoc = FirebaseFirestore.instance.collection('apps').doc('${permission.appId}-${role.teamId}');
   final appSnapshot = await appDoc.get();
 
   if (!appSnapshot.exists) {
@@ -415,19 +280,16 @@ Future<void> addPermissionToRole(
 
   final appData = appSnapshot.data() as Map<String, dynamic>;
 
-  // Check appUserScope and permission's teamScope
-  final appUserScope = AppUserScope.values.firstWhere((e) => e.toString() == 'AppUserScope.${appData['appuserscope']}');
+  final appUserScope = AppUserScope.values.firstWhere((e) => e.toString() == 'AppUserScope.${appData['appUserScope']}');
   final permissionTeamScope = permission.teamScope;
   final permissionRoleScope = permission.roleScope;
   final permissionUserScope = permission.userScope;
 
-  // Call approveCallback function
   ApproveModel approveModel = await approveCallback(
     permission: permission,
     role: role,
   );
 
-  // Perform checks
   if (appUserScope == AppUserScope.approved && !approveModel.status.useApp) {
     print('UseApp status must be true to add this permission.');
     return;
@@ -461,15 +323,15 @@ Future<void> addPermissionToRole(
   }
   List<Map<String, dynamic>> permissionsList = List<Map<String, dynamic>>.from(rolePermissions[permission.appId]);
 
-  bool permissionExists = permissionsList.any((perm) => perm['permissionName'] == permission.name && perm['roleName'] == role.name);
+  bool permissionExists = permissionsList.any((perm) => perm['permissionId'] == permission.id && perm['roleId'] == role.id);
 
   if (!permissionExists) {
     permissionsList.add({
-      'permissionName': permission.name,
-      'roleName': role.name,
+      'permissionId': permission.id,
+      'roleId': role.id,
       'approverId': approveModel.approverId,
       'approverRoleTeamId': approveModel.approverRole.teamId,
-      'approverRoleName': approveModel.approverRole.name,
+      'approverRoleId': approveModel.approverRole.id,
       'status': approveModel.status.toMap(),
       'joinedAt': Timestamp.now(),
     });
@@ -482,11 +344,11 @@ Future<void> addPermissionToRole(
 // Function to add permission to a user
 Future<void> addPermissionToUser(
   Permission permission,
-  Role userRole,
+  RoleModel userRole,
   String userId,
   ApproveCallback approveCallback,
 ) async {
-  final appDoc = FirebaseFirestore.instance.collection('apps').doc(permission.appId);
+  final appDoc = FirebaseFirestore.instance.collection('apps').doc('${permission.appId}-${userRole.teamId}');
   final appSnapshot = await appDoc.get();
 
   if (!appSnapshot.exists) {
@@ -496,26 +358,22 @@ Future<void> addPermissionToUser(
 
   final appData = appSnapshot.data() as Map<String, dynamic>;
 
-  // Call approveCallback function
   ApproveModel approveModel = await approveCallback(
     permission: permission,
     role: userRole,
     userId: userId,
   );
 
-  // Check if userRole and approverRole match
-  if (userRole.teamId != approveModel.approverRole.teamId || userRole.name != approveModel.approverRole.name) {
+  if (userRole.teamId != approveModel.approverRole.teamId || userRole.id != approveModel.approverRole.id) {
     print('User role and approver role must be the same.');
     return;
   }
 
-  // Check appUserScope and permission's teamScope
-  final appUserScope = AppUserScope.values.firstWhere((e) => e.toString() == 'AppUserScope.${appData['appuserscope']}');
+  final appUserScope = AppUserScope.values.firstWhere((e) => e.toString() == 'AppUserScope.${appData['appUserScope']}');
   final permissionTeamScope = permission.teamScope;
   final permissionRoleScope = permission.roleScope;
   final permissionUserScope = permission.userScope;
 
-  // Perform checks
   if (appUserScope == AppUserScope.approved && !approveModel.status.useApp) {
     print('UseApp status must be true to add this permission.');
     return;
@@ -532,7 +390,7 @@ Future<void> addPermissionToUser(
   }
 
   if (permissionUserScope == PermissionUserScope.approveduser && !approveModel.status.permissionUser) {
-    print('PermissionUser status must be true to add this permission.');
+    print('PermissionUser status must be true to add this permission。');
     return;
   }
 
@@ -544,26 +402,153 @@ Future<void> addPermissionToUser(
     userPermissions = Map<String, dynamic>.from(userPermissionsSnapshot.data()!);
   }
 
-  if (!userPermissions.containsKey(permission.appId)) {
-    userPermissions[permission.appId] = [];
+  if (!userPermissions.containsKey(userRole.teamId)) {
+    userPermissions[userRole.teamId] = {};
   }
-  List<Map<String, dynamic>> permissionsList = List<Map<String, dynamic>>.from(userPermissions[permission.appId]);
+  if (!userPermissions[userRole.teamId].containsKey(userRole.id)) {
+    userPermissions[userRole.teamId][userRole.id] = [];
+  }
 
-  bool permissionExists = permissionsList.any((perm) => perm['permissionName'] == permission.name);
+  List<Map<String, dynamic>> permissionsList = List<Map<String, dynamic>>.from(userPermissions[userRole.teamId][userRole.id]);
+
+  bool permissionExists = permissionsList.any((perm) => perm['permissionId'] == permission.id);
 
   if (!permissionExists) {
     permissionsList.add({
-      'permissionName': permission.name,
-      'userRoleTeamId': userRole.teamId,
-      'userRoleName': userRole.name,
+      'permissionId': permission.id,
       'approverId': approveModel.approverId,
       'approverRoleTeamId': approveModel.approverRole.teamId,
-      'approverRoleName': approveModel.approverRole.name,
+      'approverRoleId': approveModel.approverRole.id,
       'status': approveModel.status.toMap(),
       'joinedAt': Timestamp.now(),
     });
-    userPermissions[permission.appId] = permissionsList;
-  }
 
-  await userPermissionsDoc.set(userPermissions);
+    userPermissions[userRole.teamId][userRole.id] = permissionsList;
+    await userPermissionsDoc.set(userPermissions);
+  }
 }
+
+
+// Function to get user permissions in a team
+Future<UserPermissionsResult> getUserPermissionsInTeam(String teamId, String userId) async {
+  try {
+    // Step 1: Get user roles in the team
+    DocumentSnapshot teamSnapshot = await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
+    if (!teamSnapshot.exists) {
+      throw Exception('Team does not exist');
+    }
+
+    Map<String, dynamic> teamData = teamSnapshot.data() as Map<String, dynamic>;
+    Map<String, List<dynamic>> roles = Map<String, List<dynamic>>.from(teamData['roles']);
+
+    List<String> userRoles = [];
+    roles.forEach((role, userIds) {
+      if (userIds.contains(userId)) {
+        userRoles.add(role);
+      }
+    });
+
+    // Debug: Print user roles
+    print('User roles: $userRoles');
+
+    // Step 2: Get permissions for each role
+    List<RolePermissions> rolesPermissions = [];
+    List<AppPermissions> appsPermissions = [];
+    Set<String> appIds = {};
+
+    for (String role in userRoles) {
+      DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance.collection('rolePermissions').doc(teamId).get();
+      if (roleSnapshot.exists) {
+        Map<String, dynamic> rolePermissionsData = roleSnapshot.data() as Map<String, dynamic>;
+        rolePermissionsData.forEach((appId, permissionsList) {
+          if (permissionsList is List) {
+            List<String> rolePermissions = [];
+            for (var perm in permissionsList) {
+              if (perm['roleId'] == role) {
+                rolePermissions.add(perm['permissionId']);
+                appIds.add(appId);
+              }
+            }
+            rolesPermissions.add(RolePermissions(
+              roleId: role,
+              roleName: role,
+              permissions: rolePermissions,
+            ));
+          }
+        });
+      }
+    }
+
+    // Debug: Print roles permissions
+    print('Roles permissions: $rolesPermissions');
+
+    // Step 3: Get apps and aggregate permissions for each app
+    for (String appId in appIds) {
+      DocumentSnapshot appSnapshot = await FirebaseFirestore.instance.collection('apps').doc(appId).get();
+      if (appSnapshot.exists) {
+        Map<String, dynamic> appData = appSnapshot.data() as Map<String, dynamic>;
+        String appName = appData['name'];
+        List<String> appPermissions = [];
+
+        for (var rolePerm in rolesPermissions) {
+          if (rolePerm.permissions.contains(appId)) {
+            appPermissions.addAll(rolePerm.permissions);
+          }
+        }
+
+        appsPermissions.add(AppPermissions(
+          appId: appId,
+          appName: appName,
+          permissions: appPermissions.toSet().toList(),
+        ));
+      }
+    }
+
+    // Debug: Print apps permissions
+    print('Apps permissions: $appsPermissions');
+
+    return UserPermissionsResult(
+      appsPermissions: appsPermissions,
+      rolesPermissions: rolesPermissions,
+    );
+  } catch (error) {
+    print('Error fetching data: $error');
+    rethrow;
+  }
+}
+
+// Supporting classes for user permissions result
+class UserPermissionsResult {
+  final List<AppPermissions> appsPermissions;
+  final List<RolePermissions> rolesPermissions;
+
+  UserPermissionsResult({
+    required this.appsPermissions,
+    required this.rolesPermissions,
+  });
+}
+
+class AppPermissions {
+  final String appId;
+  final String appName;
+  final List<String> permissions;
+
+  AppPermissions({
+    required this.appId,
+    required this.appName,
+    required this.permissions,
+  });
+}
+
+class RolePermissions {
+  final String roleId;
+  final String roleName;
+  final List<String> permissions;
+
+  RolePermissions({
+    required this.roleId,
+    required this.roleName,
+    required this.permissions,
+  });
+}
+
