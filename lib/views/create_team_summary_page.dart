@@ -34,8 +34,8 @@ class CreateTeamSummaryPage extends StatelessWidget {
 
       // Create roles
       var roles = {
-        'admins': [admin.uid!],
-        'members': members.map((user) => user.uid!).toSet().toList(),
+        'admins': [admin.uid],
+        'members': members.map((user) => user.uid).toSet().toList(),
       };
 
       print('Roles before saving: $roles');
@@ -49,7 +49,7 @@ class CreateTeamSummaryPage extends StatelessWidget {
         roles: roles,
       );
 
-      await newTeam.saveToFirestore(admin.uid!);
+      await newTeam.saveToFirestore(admin.uid);
 
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Team successfully created!'),

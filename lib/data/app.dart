@@ -216,6 +216,25 @@ class AppModel {
     required String ownerTeamId,
     String? creator,
   }) async {
+    // Check if creator has `myteamapp` app's `appadmins` permission
+    if (!(await hasAppAdminPermission(creator!, ownerTeamId, 'myteamapp'))) {
+      throw Exception('Creator does not have required app admin permission in the owner team.');
+    }
+
+    if (appOwnerScope == AppOwnerScope.sole) {
+      // Check if an app with sole ownership already exists
+      QuerySnapshot existingSoleApps = await FirebaseFirestore.instance
+        .collection('apps')
+        .where('id', isEqualTo: id)
+        .where('appOwnerScope', isEqualTo: 'sole')
+        .get();
+
+      if (existingSoleApps.docs.isNotEmpty) {
+        throw Exception('App with sole ownership scope already exists.');
+      }
+    }
+
+    // Check if the specific app-ownerTeam combination already exists
     DocumentSnapshot doc = await FirebaseFirestore.instance.collection('apps').doc('$id-$ownerTeamId').get();
     if (doc.exists) {
       return AppModel.fromFirestore(doc);
@@ -236,6 +255,39 @@ class AppModel {
     await app.saveToFirestore();
     await addDefaultPermissions(app);
     return app;
+  }
+
+  // Helper method to check if a user has the specified app's appadmins permission in a team
+  static Future<bool> hasAppAdminPermission(String userId, String teamId, String appId) async {
+    DocumentSnapshot teamSnapshot = await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
+    if (!teamSnapshot.exists) {
+      return false;
+    }
+
+    Map<String, dynamic> teamData = teamSnapshot.data() as Map<String, dynamic>;
+    Map<String, List<dynamic>> roles = Map<String, List<dynamic>>.from(teamData['roles']);
+
+    List<String> userRoles = [];
+    roles.forEach((role, userIds) {
+      if (userIds.contains(userId)) {
+        userRoles.add(role);
+      }
+    });
+
+    for (String role in userRoles) {
+      DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance.collection('rolePermissions').doc(teamId).get();
+      if (roleSnapshot.exists) {
+        Map<String, dynamic> rolePermissionsData = roleSnapshot.data() as Map<String, dynamic>;
+        if (rolePermissionsData.containsKey(appId)) {
+          List<dynamic> permissionsList = rolePermissionsData[appId];
+          if (permissionsList.any((perm) => perm['permissionId'] == 'appadmins' && perm['roleId'] == role)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
   }
 }
 

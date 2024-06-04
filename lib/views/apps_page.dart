@@ -135,7 +135,7 @@ class _AppsPageState extends State<AppsPage> {
         ],
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 Padding(
@@ -200,7 +200,7 @@ class _AppsPageState extends State<AppsPage> {
                         subtitle: Text(permission.data.toString()),
                       ),
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             ),
@@ -279,7 +279,7 @@ class _AppsPageState extends State<AppsPage> {
               ),
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -304,13 +304,13 @@ class AppDetailPage extends StatelessWidget {
             Text('ID: ${app.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
             Text('Description: ${app.description}'),
             const SizedBox(height: 10),
-            Text('Permissions:'),
+            const Text('Permissions:'),
             ...app.permissions.map((permission) {
               return ListTile(
                 title: Text(permission.name),
                 subtitle: Text(permission.data.toString()),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

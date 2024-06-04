@@ -73,7 +73,7 @@ class TeamProfilePage extends StatelessWidget {
       return [const Text('No users in this role.')];
     }
 
-    Set<String> excludeUids = excludeFrom?.map((user) => user.uid!).toSet() ?? {};
+    Set<String> excludeUids = excludeFrom?.map((user) => user.uid).toSet() ?? {};
 
     return users
         .where((user) => !excludeUids.contains(user.uid))

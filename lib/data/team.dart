@@ -126,8 +126,9 @@ class Team {
     roles['admins'] = roles['admins'] ?? [];
     roles['members'] = roles['members'] ?? [];
     if (!roles['admins']!.contains(creatorId)) roles['admins']!.add(creatorId);
-    if (!roles['members']!.contains(creatorId))
+    if (!roles['members']!.contains(creatorId)) {
       roles['members']!.add(creatorId);
+    }
   }
 
   Future<void> _saveTeamToFirestore() async {
