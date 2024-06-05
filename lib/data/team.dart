@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:matchmatter/apps/matchmatterapp/match_matter_app.dart';
 import 'package:matchmatter/apps/myteamapp/my_team_app.dart';
 import 'package:matchmatter/data/app.dart';
 import 'package:matchmatter/data/user.dart';
@@ -105,6 +106,15 @@ class Team {
     );
 
     await _assignPermissions(app, creatorId);
+
+    if (id == 'matchmatterteam') {
+      MatchMatterApp app = await MatchMatterApp.createOrGet(
+        creator: creatorId,
+        ownerTeamId: id,
+      );
+
+      await _assignPermissions(app, creatorId);
+    }
   }
 
   void _ensureUniqueUsersInRoles() {
@@ -142,7 +152,7 @@ class Team {
     });
   }
 
-  Future<void> _assignPermissions(MyTeamApp app, String? creatorId) async {
+  Future<void> _assignPermissions(AppModel app, String? creatorId) async {
     for (String role in roles.keys) {
       List<String> userIds = roles[role]!;
       if (userIds.isNotEmpty) {
@@ -163,13 +173,20 @@ class Team {
           data: {},
         );
 
+        // 创建 MyTeamApp 实例
+        MyTeamApp myTeamApp = await MyTeamApp.createOrGet(
+          creator: creatorId,
+          ownerTeamId: id,
+        );
+
         // Assign adminrole to the creator of each role
-        await _assignPermissionToUser(app, 'adminrole', creatorId, roleModel);
+        await _assignPermissionToUser(
+            myTeamApp, 'adminrole', creatorId, roleModel);
       }
     }
   }
 
-  Future<void> _assignPermissionToRole(MyTeamApp app, String permissionId,
+  Future<void> _assignPermissionToRole(AppModel app, String permissionId,
       String roleName, String creatorId) async {
     Permission permission =
         app.permissions.firstWhere((perm) => perm.id == permissionId);
@@ -199,7 +216,7 @@ class Team {
     );
   }
 
-  Future<void> _assignPermissionToUser(MyTeamApp app, String permissionId,
+  Future<void> _assignPermissionToUser(AppModel app, String permissionId,
       String userId, RoleModel userRole) async {
     Permission permission =
         app.permissions.firstWhere((perm) => perm.id == permissionId);
@@ -320,24 +337,31 @@ class Team {
 
   Future<bool> hasAdminRolePermission(
       RoleModel roleModel, String userId) async {
+    // Check if the userId exists in the roles map for the given roleModel
     if (!roles[roleModel.id]!.contains(userId)) {
       return false;
     }
 
+    // Retrieve the user's permissions document from Firestore
     DocumentSnapshot userDoc = await FirebaseFirestore.instance
         .collection('userPermissions')
         .doc(userId)
         .get();
+
     if (userDoc.exists) {
       var userData = userDoc.data() as Map<String, dynamic>;
-      var permissions = userData['permissions'] as Map<String, dynamic>?;
-      if (permissions != null && permissions['myteamapp'] != null) {
-        var appPermissions = permissions['myteamapp'] as List<dynamic>;
-        return appPermissions.any((perm) =>
-            perm['permissionId'] == 'adminrole' &&
-            perm['teamId'] == id &&
-            perm['roleId'] == roleModel.id &&
-            perm['userId'] == userId);
+      var teamPermissions = userData[roleModel.teamId] as Map<String, dynamic>?;
+
+      if (teamPermissions != null) {
+        var rolePermissions = teamPermissions[roleModel.id] as List<dynamic>?;
+
+        if (rolePermissions != null) {
+          return rolePermissions.any((perm) =>
+              perm['permissionId'] == 'adminrole' &&
+              perm['approverRoleTeamId'] == roleModel.teamId &&
+              perm['approverRoleId'] == roleModel.id &&
+              perm['status']['permissionUser'] == true);
+        }
       }
     }
     return false;

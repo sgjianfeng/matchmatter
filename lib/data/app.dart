@@ -216,8 +216,8 @@ class AppModel {
     required String ownerTeamId,
     String? creator,
   }) async {
-    // Check if creator has `myteamapp` app's `appadmins` permission
-    if (!(await hasAppAdminPermission(creator!, ownerTeamId, 'myteamapp'))) {
+    // Check if creator has `myteamapp` app's `appadmins` permission, myteamapp is exclude
+    if (id != 'myteamapp' && !(await hasAppAdminPermission(creator!, ownerTeamId, 'myteamapp'))) {
       throw Exception('Creator does not have required app admin permission in the owner team.');
     }
 
