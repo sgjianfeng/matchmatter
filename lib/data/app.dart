@@ -508,27 +508,25 @@ Future<UserPermissionsResult> getUserPermissionsInTeam(String teamId, String use
     List<AppPermissions> appsPermissions = [];
     Set<String> appIds = {};
 
-    for (String role in userRoles) {
-      DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance.collection('rolePermissions').doc(teamId).get();
-      if (roleSnapshot.exists) {
-        Map<String, dynamic> rolePermissionsData = roleSnapshot.data() as Map<String, dynamic>;
-        rolePermissionsData.forEach((appId, permissionsList) {
-          if (permissionsList is List) {
-            List<String> rolePermissions = [];
-            for (var perm in permissionsList) {
-              if (perm['roleId'] == role) {
-                rolePermissions.add(perm['permissionId']);
-                appIds.add(appId);
-              }
+    DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance.collection('rolePermissions').doc(teamId).get();
+    if (roleSnapshot.exists) {
+      Map<String, dynamic> rolePermissionsData = roleSnapshot.data() as Map<String, dynamic>;
+      rolePermissionsData.forEach((appId, permissionsList) {
+        if (permissionsList is List) {
+          List<String> rolePermissions = [];
+          for (var perm in permissionsList) {
+            if (userRoles.contains(perm['roleId'])) {
+              rolePermissions.add(perm['permissionId']);
+              appIds.add(appId);
             }
-            rolesPermissions.add(RolePermissions(
-              roleId: role,
-              roleName: role,
-              permissions: rolePermissions,
-            ));
           }
-        });
-      }
+          rolesPermissions.add(RolePermissions(
+            roleId: userRoles.join(','), // Assuming the permissions apply to the combination of roles
+            roleName: userRoles.join(','),
+            permissions: rolePermissions,
+          ));
+        }
+      });
     }
 
     // Debug: Print roles permissions
@@ -536,7 +534,7 @@ Future<UserPermissionsResult> getUserPermissionsInTeam(String teamId, String use
 
     // Step 3: Get apps and aggregate permissions for each app
     for (String appId in appIds) {
-      DocumentSnapshot appSnapshot = await FirebaseFirestore.instance.collection('apps').doc(appId).get();
+      DocumentSnapshot appSnapshot = await FirebaseFirestore.instance.collection('apps').doc('$appId-$teamId').get();
       if (appSnapshot.exists) {
         Map<String, dynamic> appData = appSnapshot.data() as Map<String, dynamic>;
         String appName = appData['name'];
