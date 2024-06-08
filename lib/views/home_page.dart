@@ -38,7 +38,7 @@ class HomePage extends StatelessWidget {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Teams'),
         BottomNavigationBarItem(
-            icon: Icon(Icons.sports_soccer), label: 'Matches'),
+            icon: Icon(Icons.sports_soccer), label: 'Matters'),
         BottomNavigationBarItem(icon: Icon(Icons.contacts), label: 'Contacts'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Me'),
       ],

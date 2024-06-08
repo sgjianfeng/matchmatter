@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/views/new_team_page.dart';
 import 'package:matchmatter/views/team_page.dart';
+import 'dart:math';
 
 class TeamsPage extends StatefulWidget {
   const TeamsPage({super.key});
@@ -104,6 +105,18 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
       appBar: AppBar(
         title: const Text('Teams'),
         actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              // Handle search action
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle),
+            onPressed: () {
+              _showNewTeamModal(context);
+            },
+          ),
           _buildPopupMenu(context),
         ],
       ),
@@ -144,13 +157,61 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
                 itemCount: teams.length,
                 itemBuilder: (context, index) {
                   final team = teams[index];
+                  final latestMessage = 'This is a message for team ${team.name}';
+                  final messageCount = (10 + index) % 100;
+                  final teamMembers = Random().nextInt(11) + 10; // 10 到 20 之间的任意数字
+
                   return ListTile(
                     leading: CircleAvatar(
-                      child: Text('${index + 1}'),
+                      child: Text(
+                        '$teamMembers',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      backgroundColor: Colors.blue,
                     ),
-                    title: Text(team.name),
-                    subtitle: Text(team.tags.join(', ')),
-                    trailing: const Icon(Icons.arrow_forward_ios),
+                    title: Text(
+                      team.name,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          team.tags.join(', '),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                        Text(
+                          team.description ?? '',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(color: Colors.grey[500]),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(top: 4.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
+                          child: Text(
+                            latestMessage,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(color: Colors.grey[800]),
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.message),
+                        Text('$messageCount'),
+                      ],
+                    ),
                     onTap: () {
                       _navigateToTeamDetail(context, team);
                     },

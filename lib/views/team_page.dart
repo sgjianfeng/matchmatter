@@ -3,7 +3,7 @@ import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
 import 'package:matchmatter/providers/bottom_navigation_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:matchmatter/views/apps_page.dart';
+import 'package:matchmatter/views/apps_page_demo1.dart';
 import 'package:matchmatter/views/team_profile_page.dart';
 
 class TeamPage extends StatefulWidget {
@@ -64,7 +64,7 @@ class _TeamPageState extends State<TeamPage> {
                 children: [
                   _buildMessagesTab(),
                   _buildChatsTab(),
-                  AppsPage(teamId: widget.team.id),  // Pass teamId to AppsPage
+                  AppsPage(teamId: widget.team.id, user: null),  // Pass teamId to AppsPage
                   TeamProfilePage(
                     team: widget.team,
                     roles: snapshot.data!,
