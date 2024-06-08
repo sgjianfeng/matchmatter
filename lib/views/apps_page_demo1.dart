@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:matchmatter/data/app.dart';
 import 'package:matchmatter/data/user.dart';
+import 'package:matchmatter/views/app_detail_page.dart';
 
 class AppsPage extends StatefulWidget {
   final String teamId;
@@ -21,14 +22,14 @@ class _AppsPageState extends State<AppsPage> {
   bool isLoading = true;
   late UserModel currentUser;
 
-  final List<AppModel> apps = [
+  final List<AppModel> badmintonApps = [
     AppModel(
       id: '1',
       name: 'BadmintonTeamEvents',
       appOwnerScope: AppOwnerScope.sole,
       appUserScope: AppUserScope.ownerteam,
       scopeData: {},
-      ownerTeamId: 'our team',
+      ownerTeamId: 'self team',
       permissions: [
         Permission(id: 'admins', name: 'admins', appId: '1', data: {}),
         Permission(id: 'players', name: 'players', appId: '1', data: {})
@@ -66,6 +67,54 @@ class _AppsPageState extends State<AppsPage> {
       creator: 'creator_id',
       createdAt: Timestamp.now(),
       description: '通过这个 app 可以组织团队类比赛，可以参与各种羽毛球比赛，也可以邀请更多人参与比赛',
+    ),
+  ];
+
+  final List<AppModel> soccerApps = [
+    AppModel(
+      id: '4',
+      name: 'SoccerTeamEvents',
+      appOwnerScope: AppOwnerScope.sole,
+      appUserScope: AppUserScope.ownerteam,
+      scopeData: {},
+      ownerTeamId: 'soccer team',
+      permissions: [
+        Permission(id: 'admins', name: 'admins', appId: '4', data: {}),
+        Permission(id: 'players', name: 'players', appId: '4', data: {})
+      ],
+      creator: 'creator_id',
+      createdAt: Timestamp.now(),
+      description: '通过这个 app 可以组织和参与足球团队的活动，点击进入了解更多细节',
+    ),
+    AppModel(
+      id: '5',
+      name: 'SoccerCourts',
+      appOwnerScope: AppOwnerScope.sole,
+      appUserScope: AppUserScope.ownerteam,
+      scopeData: {},
+      ownerTeamId: 'sportmatter team',
+      permissions: [
+        Permission(id: 'admins', name: 'admins', appId: '5', data: {}),
+        Permission(id: 'players', name: 'players', appId: '5', data: {})
+      ],
+      creator: 'creator_id',
+      createdAt: Timestamp.now(),
+      description: '通过这个 app 可以管理团队场地，可以发布场地移交信息，可以提供场地给 sportmatter 用来参加各种活动等',
+    ),
+    AppModel(
+      id: '6',
+      name: 'SoccerMatches',
+      appOwnerScope: AppOwnerScope.sole,
+      appUserScope: AppUserScope.ownerteam,
+      scopeData: {},
+      ownerTeamId: 'sportmatter team',
+      permissions: [
+        Permission(id: 'admins', name: 'admins', appId: '6', data: {}),
+        Permission(id: 'players', name: 'players', appId: '6', data: {})
+      ],
+      creator: 'creator_id',
+      createdAt: Timestamp.now(),
+      description: '通过这个 app 可以组织团队类比赛，可以参与各种足球比赛，也可以邀请更多人参与比赛',
     ),
   ];
 
@@ -108,6 +157,8 @@ class _AppsPageState extends State<AppsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final List<AppModel> apps = widget.teamId == 'team6703' ? soccerApps : badmintonApps;
+
     final filteredApps = apps.where((app) {
       final query = searchQuery.toLowerCase();
       final appMatch = app.name.toLowerCase().contains(query);
@@ -196,6 +247,10 @@ class _AppsPageState extends State<AppsPage> {
       itemCount: apps.length,
       itemBuilder: (context, index) {
         final app = apps[index];
+        List<String> filteredRoles = [];
+        if (showAdmins) filteredRoles.addAll(app.permissions.where((perm) => perm.id == 'admins').map((perm) => perm.name));
+        if (showPlayers) filteredRoles.addAll(app.permissions.where((perm) => perm.id == 'players').map((perm) => perm.name));
+
         return Padding(
           padding: EdgeInsets.only(
               top: index == 0 ? 4.0 : 8.0, bottom: 8.0, left: 8.0, right: 8.0),
@@ -231,7 +286,7 @@ class _AppsPageState extends State<AppsPage> {
                         color: Colors.lightBlueAccent.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(4.0),
                       ),
-                      child: Text('Roles: ${app.permissions.map((e) => e.name).join(', ')}'),
+                      child: Text('Roles: ${filteredRoles.join(', ')}'),
                     ),
                     const SizedBox(height: 4.0),
                     Container(
@@ -317,38 +372,5 @@ class AppsSearchDelegate extends SearchDelegate<String> {
   @override
   Widget buildSuggestions(BuildContext context) {
     return Container();
-  }
-}
-
-class AppDetailPage extends StatelessWidget {
-  final AppModel app;
-
-  const AppDetailPage({super.key, required this.app});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(app.name),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('ID: ${app.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text('Description: ${app.description ?? ''}'),
-            const SizedBox(height: 10),
-            const Text('Permissions:'),
-            ...app.permissions.map((permission) {
-              return ListTile(
-                title: Text(permission.name),
-                subtitle: Text(permission.data.toString()),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
   }
 }

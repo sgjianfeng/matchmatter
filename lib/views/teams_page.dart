@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // 导入 FontAwesome 图标包
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/views/new_team_page.dart';
 import 'package:matchmatter/views/team_page.dart';
@@ -19,6 +20,27 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
 
   @override
   bool get wantKeepAlive => true;
+
+  final Map<String, IconData> teamIcons = {
+    'Team A': FontAwesomeIcons.footballBall,
+    'Team B': FontAwesomeIcons.basketballBall,
+    'Team C': FontAwesomeIcons.volleyballBall,
+    'Team D': FontAwesomeIcons.hockeyPuck,
+    'Team E': FontAwesomeIcons.baseballBall,
+    'Team F': FontAwesomeIcons.flagCheckered,
+    'Team G': FontAwesomeIcons.running,
+    'Team H': FontAwesomeIcons.skiing,
+    'Team I': FontAwesomeIcons.swimmer,
+    'Team J': FontAwesomeIcons.tableTennis,
+    'Team K': FontAwesomeIcons.dumbbell,
+    'Team L': FontAwesomeIcons.golfBall,
+    'Team M': FontAwesomeIcons.snowboarding,
+    'Team N': FontAwesomeIcons.biking,
+    'Team P': FontAwesomeIcons.horse,
+    'Team R': FontAwesomeIcons.skating,
+    'Team T': FontAwesomeIcons.water,
+    // Add more team icons here
+  };
 
   void _showNewTeamModal(BuildContext context) {
     showModalBottomSheet(
@@ -164,15 +186,26 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
                   return ListTile(
                     leading: CircleAvatar(
                       child: Text(
-                        '$teamMembers',
+                        '${teamMembers}',
                         style: const TextStyle(color: Colors.white),
                       ),
                       backgroundColor: Colors.blue,
                     ),
-                    title: Text(
-                      team.name,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                    title: Row(
+                      children: [
+                        Icon(
+                          teamIcons[team.name] ?? FontAwesomeIcons.battleNet,
+                          color: Colors.purpleAccent,
+                        ),
+                        const SizedBox(width: 8.0),
+                        Expanded(
+                          child: Text(
+                            team.name,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
