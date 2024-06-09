@@ -5,6 +5,7 @@ import 'package:matchmatter/providers/bottom_navigation_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:matchmatter/views/apps_page_demo1.dart';
 import 'package:matchmatter/views/team_profile_page.dart';
+import 'package:matchmatter/views/team_messages_page.dart'; // Import the TeamMessagesPage
 
 class TeamPage extends StatefulWidget {
   final Team team;
@@ -62,7 +63,7 @@ class _TeamPageState extends State<TeamPage> {
             } else if (snapshot.hasData) {
               return TabBarView(
                 children: [
-                  _buildMessagesTab(),
+                  TeamMessagesPage(),  // Use the TeamMessagesPage here
                   _buildChatsTab(),
                   AppsPage(teamId: widget.team.id, user: null),  // Pass teamId to AppsPage
                   TeamProfilePage(
@@ -89,15 +90,6 @@ class _TeamPageState extends State<TeamPage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildMessagesTab() {
-    return ListView(
-      children: [
-        ListTile(title: Text('Messages for ${widget.team.name}')),
-        // Add message-related content here
-      ],
     );
   }
 

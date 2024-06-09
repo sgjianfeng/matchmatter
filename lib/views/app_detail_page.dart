@@ -171,21 +171,43 @@ class _AppDetailPageState extends State<AppDetailPage> {
 
   Widget _buildActionsSection(BuildContext context) {
     List<Widget> actions = [];
-    if (showAdmins) {
+    if (widget.app.name == 'BadmintonCourts') {
       actions.add(
-        _buildAdminAction(
+        _buildCourtRentalAction(
           context,
-          title: '发布团队打球活动 (Admins)',
+          title: '转租场地 (Admins)',
         ),
       );
-    }
-    if (showPlayers) {
+    } else if (widget.app.name == 'BadmintonMatches') {
       actions.add(
-        _buildPlayerAction(
+        _buildMatchInfoAction(
           context,
-          title: '参加团队打球活动 (Players)',
+          title: '发布积分赛信息 (Admins)',
         ),
       );
+      actions.add(
+        _buildPublicMatchRegistrationAction(
+          context,
+          title: '报名比赛 (Admins)',
+        ),
+      );
+    } else {
+      if (showAdmins) {
+        actions.add(
+          _buildAdminAction(
+            context,
+            title: '发布团队打球活动 (Admins)',
+          ),
+        );
+      }
+      if (showPlayers) {
+        actions.add(
+          _buildPlayerAction(
+            context,
+            title: '参加团队打球活动 (Players)',
+          ),
+        );
+      }
     }
 
     return Column(
@@ -273,21 +295,231 @@ class _AppDetailPageState extends State<AppDetailPage> {
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8.0),
-                Text('地址: 123 Court St'),
+                const Text('地址: 123 Court St'),
                 const SizedBox(height: 4.0),
-                Text('场地: Court 1'),
+                const Text('场地: Court 1'),
                 const SizedBox(height: 4.0),
-                Text('时间: 10:00 AM'),
+                const Text('时间: 10:00 AM'),
                 const Divider(),
                 const SizedBox(height: 8.0),
-                Text('参加者:', style: const TextStyle(fontWeight: FontWeight.bold)),
-                ...participants.map((participant) => Text(participant)).toList(),
+                const Text('参加者:', style: TextStyle(fontWeight: FontWeight.bold)),
+                ...participants.map((participant) => Text(participant)),
                 const SizedBox(height: 8.0),
                 ElevatedButton(
                   onPressed: () {
                     // Handle add to participant list action
                   },
                   child: const Text('加入活动'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCourtRentalAction(BuildContext context, {required String title}) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 10.0),
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: '时间',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: '10:00 AM - 12:00 PM'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: '地点',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: '123 Court St'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: '场地号',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: 'Court 1'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: '价格',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: '20 SGD'),
+                ),
+                const SizedBox(height: 8.0),
+                ElevatedButton(
+                  onPressed: () {
+                    // Handle publish action
+                  },
+                  child: const Text('发布场地转租'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMatchInfoAction(BuildContext context, {required String title}) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 10.0),
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: '时间',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: '10:00 AM'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: '地点',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: '123 Court St'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: '场地',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: 'Court 1'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: '参加者名单和积分',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(),
+                ),
+                const SizedBox(height: 8.0),
+                ElevatedButton(
+                  onPressed: () {
+                    // Handle publish action
+                  },
+                  child: const Text('发布比赛'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPublicMatchRegistrationAction(BuildContext context, {required String title}) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 10.0),
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 8.0),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        decoration: const InputDecoration(
+                          labelText: '搜索比赛',
+                          labelStyle: TextStyle(fontSize: 14),
+                        ),
+                        style: const TextStyle(fontSize: 14),
+                        controller: TextEditingController(),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.search),
+                      onPressed: () {
+                        // Handle search matches
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8.0),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        decoration: const InputDecoration(
+                          labelText: '搜索参赛人',
+                          labelStyle: TextStyle(fontSize: 14),
+                        ),
+                        style: const TextStyle(fontSize: 14),
+                        controller: TextEditingController(),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.search),
+                      onPressed: () {
+                        // Handle search participants
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8.0),
+                ElevatedButton(
+                  onPressed: () {
+                    // Handle submit registration
+                  },
+                  child: const Text('提交报名'),
                 ),
               ],
             ),

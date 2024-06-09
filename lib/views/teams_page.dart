@@ -183,18 +183,27 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
                   final messageCount = (10 + index) % 100;
                   final teamMembers = Random().nextInt(11) + 10; // 10 到 20 之间的任意数字
 
+                  IconData teamIcon;
+                  if (team.id == 'team6702') {
+                    teamIcon = FontAwesomeIcons.flagCheckered;
+                  } else if (team.id == 'team6703') {
+                    teamIcon = FontAwesomeIcons.footballBall;
+                  } else {
+                    teamIcon = teamIcons[team.name] ?? FontAwesomeIcons.battleNet;
+                  }
+
                   return ListTile(
                     leading: CircleAvatar(
+                      backgroundColor: Colors.blue,
                       child: Text(
-                        '${teamMembers}',
+                        '$teamMembers',
                         style: const TextStyle(color: Colors.white),
                       ),
-                      backgroundColor: Colors.blue,
                     ),
                     title: Row(
                       children: [
                         Icon(
-                          teamIcons[team.name] ?? FontAwesomeIcons.battleNet,
+                          teamIcon,
                           color: Colors.purpleAccent,
                         ),
                         const SizedBox(width: 8.0),
