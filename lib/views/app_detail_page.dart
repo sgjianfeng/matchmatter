@@ -13,6 +13,7 @@ class AppDetailPage extends StatefulWidget {
 class _AppDetailPageState extends State<AppDetailPage> {
   bool showAdmins = true;
   bool showPlayers = true;
+  bool showOrganisers = true;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +56,8 @@ class _AppDetailPageState extends State<AppDetailPage> {
                     showAdmins = !showAdmins;
                   } else if (value == 'players') {
                     showPlayers = !showPlayers;
+                  } else if (value == 'organisers') {
+                    showOrganisers = !showOrganisers;
                   }
                 });
               },
@@ -68,6 +71,11 @@ class _AppDetailPageState extends State<AppDetailPage> {
                   value: 'players',
                   checked: showPlayers,
                   child: const Text('Players'),
+                ),
+                CheckedPopupMenuItem<String>(
+                  value: 'organisers',
+                  checked: showOrganisers,
+                  child: const Text('Organisers'),
                 ),
               ],
             ),
@@ -94,6 +102,8 @@ class _AppDetailPageState extends State<AppDetailPage> {
                           showAdmins = !showAdmins;
                         } else if (value == 'players') {
                           showPlayers = !showPlayers;
+                        } else if (value == 'organisers') {
+                          showOrganisers = !showOrganisers;
                         }
                       });
                     },
@@ -108,6 +118,11 @@ class _AppDetailPageState extends State<AppDetailPage> {
                         value: 'players',
                         checked: showPlayers,
                         child: const Text('Players'),
+                      ),
+                      CheckedPopupMenuItem<String>(
+                        value: 'organisers',
+                        checked: showOrganisers,
+                        child: const Text('Organisers'),
                       ),
                     ],
                   ),
@@ -175,20 +190,27 @@ class _AppDetailPageState extends State<AppDetailPage> {
       actions.add(
         _buildCourtRentalAction(
           context,
-          title: '转租场地 (Admins)',
+          title: 'Rent Court (Admins)',
         ),
       );
     } else if (widget.app.name == 'BadmintonMatches') {
       actions.add(
         _buildMatchInfoAction(
           context,
-          title: '发布积分赛信息 (Admins)',
+          title: 'Post Match Information (Admins)',
         ),
       );
       actions.add(
         _buildPublicMatchRegistrationAction(
           context,
-          title: '报名比赛 (Admins)',
+          title: 'Register for Match (Admins)',
+        ),
+      );
+    } else if (widget.app.name == 'SoccerMatches') {
+      actions.add(
+        _buildSoccerMatchAction(
+          context,
+          title: 'Post Soccer Match (Organisers)',
         ),
       );
     } else {
@@ -196,7 +218,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
         actions.add(
           _buildAdminAction(
             context,
-            title: '发布团队打球活动 (Admins)',
+            title: 'Post Team Activity (Admins)',
           ),
         );
       }
@@ -204,7 +226,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
         actions.add(
           _buildPlayerAction(
             context,
-            title: '参加团队打球活动 (Players)',
+            title: 'Join Team Activity (Players)',
           ),
         );
       }
@@ -236,7 +258,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                 const SizedBox(height: 8.0),
                 TextField(
                   decoration: const InputDecoration(
-                    labelText: '地址',
+                    labelText: 'Address',
                     labelStyle: TextStyle(fontSize: 14),
                   ),
                   style: const TextStyle(fontSize: 14),
@@ -245,7 +267,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                 const SizedBox(height: 8.0),
                 TextField(
                   decoration: const InputDecoration(
-                    labelText: '场地',
+                    labelText: 'Court',
                     labelStyle: TextStyle(fontSize: 14),
                   ),
                   style: const TextStyle(fontSize: 14),
@@ -254,7 +276,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                 const SizedBox(height: 8.0),
                 TextField(
                   decoration: const InputDecoration(
-                    labelText: '时间',
+                    labelText: 'Time',
                     labelStyle: TextStyle(fontSize: 14),
                   ),
                   style: const TextStyle(fontSize: 14),
@@ -265,7 +287,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                   onPressed: () {
                     // Handle publish action
                   },
-                  child: const Text('发布活动'),
+                  child: const Text('Post Activity'),
                 ),
               ],
             ),
@@ -295,21 +317,21 @@ class _AppDetailPageState extends State<AppDetailPage> {
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8.0),
-                const Text('地址: 123 Court St'),
+                const Text('Address: 123 Court St'),
                 const SizedBox(height: 4.0),
-                const Text('场地: Court 1'),
+                const Text('Court: Court 1'),
                 const SizedBox(height: 4.0),
-                const Text('时间: 10:00 AM'),
+                const Text('Time: 10:00 AM'),
                 const Divider(),
                 const SizedBox(height: 8.0),
-                const Text('参加者:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Participants:', style: TextStyle(fontWeight: FontWeight.bold)),
                 ...participants.map((participant) => Text(participant)),
                 const SizedBox(height: 8.0),
                 ElevatedButton(
                   onPressed: () {
                     // Handle add to participant list action
                   },
-                  child: const Text('加入活动'),
+                  child: const Text('Join Activity'),
                 ),
               ],
             ),
@@ -339,7 +361,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                 const SizedBox(height: 8.0),
                 TextField(
                   decoration: const InputDecoration(
-                    labelText: '时间',
+                    labelText: 'Time',
                     labelStyle: TextStyle(fontSize: 14),
                   ),
                   style: const TextStyle(fontSize: 14),
@@ -348,7 +370,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                 const SizedBox(height: 8.0),
                 TextField(
                   decoration: const InputDecoration(
-                    labelText: '地点',
+                    labelText: 'Venue',
                     labelStyle: TextStyle(fontSize: 14),
                   ),
                   style: const TextStyle(fontSize: 14),
@@ -357,7 +379,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                 const SizedBox(height: 8.0),
                 TextField(
                   decoration: const InputDecoration(
-                    labelText: '场地号',
+                    labelText: 'Court Number',
                     labelStyle: TextStyle(fontSize: 14),
                   ),
                   style: const TextStyle(fontSize: 14),
@@ -366,7 +388,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                 const SizedBox(height: 8.0),
                 TextField(
                   decoration: const InputDecoration(
-                    labelText: '价格',
+                    labelText: 'Price',
                     labelStyle: TextStyle(fontSize: 14),
                   ),
                   style: const TextStyle(fontSize: 14),
@@ -377,7 +399,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                   onPressed: () {
                     // Handle publish action
                   },
-                  child: const Text('发布场地转租'),
+                  child: const Text('Post Court Rental'),
                 ),
               ],
             ),
@@ -407,7 +429,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                 const SizedBox(height: 8.0),
                 TextField(
                   decoration: const InputDecoration(
-                    labelText: '时间',
+                    labelText: 'Time',
                     labelStyle: TextStyle(fontSize: 14),
                   ),
                   style: const TextStyle(fontSize: 14),
@@ -416,7 +438,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                 const SizedBox(height: 8.0),
                 TextField(
                   decoration: const InputDecoration(
-                    labelText: '地点',
+                    labelText: 'Venue',
                     labelStyle: TextStyle(fontSize: 14),
                   ),
                   style: const TextStyle(fontSize: 14),
@@ -425,7 +447,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                 const SizedBox(height: 8.0),
                 TextField(
                   decoration: const InputDecoration(
-                    labelText: '场地',
+                    labelText: 'Court',
                     labelStyle: TextStyle(fontSize: 14),
                   ),
                   style: const TextStyle(fontSize: 14),
@@ -434,7 +456,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                 const SizedBox(height: 8.0),
                 TextField(
                   decoration: const InputDecoration(
-                    labelText: '参加者名单和积分',
+                    labelText: 'Participants List and Scores',
                     labelStyle: TextStyle(fontSize: 14),
                   ),
                   style: const TextStyle(fontSize: 14),
@@ -445,7 +467,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                   onPressed: () {
                     // Handle publish action
                   },
-                  child: const Text('发布比赛'),
+                  child: const Text('Post Match'),
                 ),
               ],
             ),
@@ -478,7 +500,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                     Expanded(
                       child: TextField(
                         decoration: const InputDecoration(
-                          labelText: '搜索比赛',
+                          labelText: 'Search Matches',
                           labelStyle: TextStyle(fontSize: 14),
                         ),
                         style: const TextStyle(fontSize: 14),
@@ -499,7 +521,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                     Expanded(
                       child: TextField(
                         decoration: const InputDecoration(
-                          labelText: '搜索参赛人',
+                          labelText: 'Search Participants',
                           labelStyle: TextStyle(fontSize: 14),
                         ),
                         style: const TextStyle(fontSize: 14),
@@ -519,7 +541,102 @@ class _AppDetailPageState extends State<AppDetailPage> {
                   onPressed: () {
                     // Handle submit registration
                   },
-                  child: const Text('提交报名'),
+                  child: const Text('Submit Registration'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSoccerMatchAction(BuildContext context, {required String title}) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 10.0),
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              color: Colors.purple.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Match Name',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: 'Bukit Batok East CC Soccer Match'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Address',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: 'Bukit Batok East'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Court',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: 'Court 1'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Time',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: '10:00 AM'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Organiser',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: 'Bukit Batok East Community Club'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Sponsor',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: 'Meow Barbecue'),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Registration Fee',
+                    labelStyle: TextStyle(fontSize: 14),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  controller: TextEditingController(text: '50 SGD'),
+                ),
+                const SizedBox(height: 8.0),
+                ElevatedButton(
+                  onPressed: () {
+                    // Handle publish action
+                  },
+                  child: const Text('Post Match'),
                 ),
               ],
             ),

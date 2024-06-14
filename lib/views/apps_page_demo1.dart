@@ -19,6 +19,7 @@ class _AppsPageState extends State<AppsPage> {
   String searchQuery = '';
   bool showAdmins = true;
   bool showPlayers = true;
+  bool showOrganisers = true;
   bool isLoading = true;
   late UserModel currentUser;
 
@@ -36,7 +37,7 @@ class _AppsPageState extends State<AppsPage> {
       ],
       creator: 'creator_id',
       createdAt: Timestamp.now(),
-      description: '通过这个 app 可以组织和参与羽毛球团队的活动，点击进入了解更多细节',
+      description: 'This app allows organizing and participating in badminton team events. Click to learn more details.',
     ),
     AppModel(
       id: '2',
@@ -51,7 +52,7 @@ class _AppsPageState extends State<AppsPage> {
       ],
       creator: 'creator_id',
       createdAt: Timestamp.now(),
-      description: '通过这个 app 可以管理团队场地，可以发布场地移交信息，可以提供场地给 sportmatter 用来参加各种活动等',
+      description: 'This app manages team courts. You can publish court transfers and provide courts for sportmatter events.',
     ),
     AppModel(
       id: '3',
@@ -66,7 +67,7 @@ class _AppsPageState extends State<AppsPage> {
       ],
       creator: 'creator_id',
       createdAt: Timestamp.now(),
-      description: '通过这个 app 可以组织团队类比赛，可以参与各种羽毛球比赛，也可以邀请更多人参与比赛',
+      description: 'This app organizes team matches. You can participate in various badminton matches and invite more people to join.',
     ),
   ];
 
@@ -84,7 +85,7 @@ class _AppsPageState extends State<AppsPage> {
       ],
       creator: 'creator_id',
       createdAt: Timestamp.now(),
-      description: '通过这个 app 可以组织和参与足球团队的活动，点击进入了解更多细节',
+      description: 'This app allows organizing and participating in soccer team events. Click to learn more details.',
     ),
     AppModel(
       id: '5',
@@ -99,7 +100,7 @@ class _AppsPageState extends State<AppsPage> {
       ],
       creator: 'creator_id',
       createdAt: Timestamp.now(),
-      description: '通过这个 app 可以管理团队场地，可以发布场地移交信息，可以提供场地给 sportmatter 用来参加各种活动等',
+      description: 'This app manages team courts. You can publish court transfers and provide courts for sportmatter events.',
     ),
     AppModel(
       id: '6',
@@ -114,7 +115,66 @@ class _AppsPageState extends State<AppsPage> {
       ],
       creator: 'creator_id',
       createdAt: Timestamp.now(),
-      description: '通过这个 app 可以组织团队类比赛，可以参与各种足球比赛，也可以邀请更多人参与比赛',
+      description: 'This app organizes team matches. You can participate in various soccer matches and invite more people to join.',
+    ),
+  ];
+
+  final List<AppModel> bukitBatokEastCcApps = [
+    AppModel(
+      id: '7',
+      name: 'SoccerMatches',
+      appOwnerScope: AppOwnerScope.sole,
+      appUserScope: AppUserScope.ownerteam,
+      scopeData: {},
+      ownerTeamId: 'sportmatter team',
+      permissions: [
+        Permission(id: 'organisers', name: 'organisers', appId: '7', data: {})
+      ],
+      creator: 'creator_id',
+      createdAt: Timestamp.now(),
+      description: 'This app organizes soccer matches. Teams can participate, and organizers can invite teams or individuals to join.',
+    ),
+    AppModel(
+      id: '8',
+      name: 'SoccerCourts',
+      appOwnerScope: AppOwnerScope.sole,
+      appUserScope: AppUserScope.ownerteam,
+      scopeData: {},
+      ownerTeamId: 'sportmatter team',
+      permissions: [
+        Permission(id: 'organiser', name: 'organiser', appId: '8', data: {})
+      ],
+      creator: 'creator_id',
+      createdAt: Timestamp.now(),
+      description: 'This app allows organizers to collaborate with court providers for match venues and court transfers.',
+    ),
+    AppModel(
+      id: '9',
+      name: 'MatchSponsors',
+      appOwnerScope: AppOwnerScope.sole,
+      appUserScope: AppUserScope.ownerteam,
+      scopeData: {},
+      ownerTeamId: 'sportmatter team',
+      permissions: [
+        Permission(id: 'organiser', name: 'organiser', appId: '9', data: {})
+      ],
+      creator: 'creator_id',
+      createdAt: Timestamp.now(),
+      description: 'This app allows match organizers to negotiate with sponsors to fund matches and achieve commercial value.',
+    ),
+    AppModel(
+      id: '10',
+      name: 'MatchMediaSupporter',
+      appOwnerScope: AppOwnerScope.sole,
+      appUserScope: AppUserScope.ownerteam,
+      scopeData: {},
+      ownerTeamId: 'sportmatter team',
+      permissions: [
+        Permission(id: 'organiser', name: 'organiser', appId: '10', data: {})
+      ],
+      creator: 'creator_id',
+      createdAt: Timestamp.now(),
+      description: 'This app allows match organizers to collaborate with media service providers for match production and publication.',
     ),
   ];
 
@@ -129,9 +189,11 @@ class _AppsPageState extends State<AppsPage> {
       await _fetchCurrentUser();
     } else {
       currentUser = widget.user!;
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -144,20 +206,33 @@ class _AppsPageState extends State<AppsPage> {
           .get();
 
       currentUser = UserModel.fromDocumentSnapshot(userDoc);
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     } else {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
       // Handle user not logged in
     }
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final List<AppModel> apps = widget.teamId == 'team6703' ? soccerApps : badmintonApps;
+    final List<AppModel> apps = widget.teamId == 'bukitbatokeastcc' 
+        ? bukitBatokEastCcApps 
+        : widget.teamId == 'team6703' 
+            ? soccerApps 
+            : badmintonApps;
 
     final filteredApps = apps.where((app) {
       final query = searchQuery.toLowerCase();
@@ -166,7 +241,8 @@ class _AppsPageState extends State<AppsPage> {
           permission.name.toLowerCase().contains(query) || 
           permission.data.toString().toLowerCase().contains(query));
       final roleMatch = (showAdmins && app.permissions.any((perm) => perm.id == 'admins')) ||
-                        (showPlayers && app.permissions.any((perm) => perm.id == 'players'));
+                        (showPlayers && app.permissions.any((perm) => perm.id == 'players')) ||
+                        (showOrganisers && app.permissions.any((perm) => perm.id == 'organisers' || perm.id == 'organiser'));
       return (appMatch || permissionMatch) && roleMatch;
     }).toList();
 
@@ -217,6 +293,16 @@ class _AppsPageState extends State<AppsPage> {
                   });
                 },
               ),
+              CheckedPopupMenuItem<String>(
+                value: 'organisers',
+                checked: showOrganisers,
+                child: const Text('Organisers'),
+                onTap: () {
+                  setState(() {
+                    showOrganisers = !showOrganisers;
+                  });
+                },
+              ),
               const PopupMenuDivider(),
               const PopupMenuItem<String>(
                 value: 'settings',
@@ -250,6 +336,7 @@ class _AppsPageState extends State<AppsPage> {
         List<String> filteredRoles = [];
         if (showAdmins) filteredRoles.addAll(app.permissions.where((perm) => perm.id == 'admins').map((perm) => perm.name));
         if (showPlayers) filteredRoles.addAll(app.permissions.where((perm) => perm.id == 'players').map((perm) => perm.name));
+        if (showOrganisers) filteredRoles.addAll(app.permissions.where((perm) => perm.id == 'organisers' || perm.id == 'organiser').map((perm) => perm.name));
 
         return Padding(
           padding: EdgeInsets.only(

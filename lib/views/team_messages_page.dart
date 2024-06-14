@@ -40,14 +40,14 @@ class _TeamMessagesPageState extends State<TeamMessagesPage> {
 
   final List<Message> messages = [
     Message(
-      title: '羽毛球打球活动',
-      description: '羽毛球打球活动',
+      title: 'Badminton Event',
+      description: 'Badminton playing event',
       time: '2023-06-01 18:00',
-      venue: '羽毛球馆',
+      venue: 'Badminton Court',
       court: 'Court 1',
       role: 'players',
       appName: 'BadmintonTeamEvents',
-      action: '参加团队打球',
+      action: 'Join the team event',
       participants: ['Alice', 'Bob', 'Charlie'],
     ),
     // Add more messages here
@@ -77,7 +77,7 @@ class _TeamMessagesPageState extends State<TeamMessagesPage> {
                     decoration: const InputDecoration(
                       hintText: 'Search',
                       border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 4.0),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -130,7 +130,13 @@ class _TeamMessagesPageState extends State<TeamMessagesPage> {
       body: Column(
         children: [
           if (showSearchBox) const Divider(),
-          const Divider(), // Ensure the divider is always displayed
+          Container(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Colors.grey.shade300, width: 1.0),
+              ),
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               itemCount: filteredMessages.length,
@@ -185,13 +191,19 @@ class _MessageCardState extends State<MessageCard> {
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
+                IconButton(
+                  icon: const Icon(Icons.open_in_new),
+                  onPressed: () {
+                    // Handle navigation to a new page
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 8),
             if (!isExpanded) ...[
-              Text('时间: ${message.time}', maxLines: 1, overflow: TextOverflow.ellipsis),
-              Text('地点: ${message.venue}', maxLines: 1, overflow: TextOverflow.ellipsis),
-              Text('场地: ${message.court}', maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text('Time: ${message.time}', maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text('Venue: ${message.venue}', maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text('Court: ${message.court}', maxLines: 1, overflow: TextOverflow.ellipsis),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -200,24 +212,24 @@ class _MessageCardState extends State<MessageCard> {
                       isExpanded = true;
                     });
                   },
-                  child: const Text('显示更多'),
+                  child: const Text('Show More'),
                 ),
               ),
             ],
             if (isExpanded) ...[
-              Text('描述: ${message.description}'),
+              Text('Description: ${message.description}'),
               const SizedBox(height: 8),
-              Text('时间: ${message.time}'),
+              Text('Time: ${message.time}'),
               const SizedBox(height: 8),
-              Text('地点: ${message.venue}'),
+              Text('Venue: ${message.venue}'),
               const SizedBox(height: 8),
-              Text('场地: ${message.court}'),
+              Text('Court: ${message.court}'),
               const SizedBox(height: 8),
               Text('App: ${message.appName}'),
               const SizedBox(height: 8),
               Text('Action: ${message.action}'),
               const SizedBox(height: 8),
-              Text('参加者:'),
+              Text('Participants:'),
               ...message.participants.map((participant) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2.0),
                 child: Text(participant),
@@ -233,7 +245,7 @@ class _MessageCardState extends State<MessageCard> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     textStyle: const TextStyle(fontSize: 14),
                   ),
-                  child: const Text('参加'),
+                  child: const Text('Join'),
                 ),
               ),
               Align(
@@ -244,7 +256,7 @@ class _MessageCardState extends State<MessageCard> {
                       isExpanded = false;
                     });
                   },
-                  child: const Text('收起'),
+                  child: const Text('Show Less'),
                 ),
               ),
             ],

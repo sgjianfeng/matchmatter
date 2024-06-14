@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // 导入 FontAwesome 图标包
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/views/new_team_page.dart';
 import 'package:matchmatter/views/team_page.dart';
@@ -20,27 +19,6 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
 
   @override
   bool get wantKeepAlive => true;
-
-  final Map<String, IconData> teamIcons = {
-    'Team A': FontAwesomeIcons.footballBall,
-    'Team B': FontAwesomeIcons.basketballBall,
-    'Team C': FontAwesomeIcons.volleyballBall,
-    'Team D': FontAwesomeIcons.hockeyPuck,
-    'Team E': FontAwesomeIcons.baseballBall,
-    'Team F': FontAwesomeIcons.flagCheckered,
-    'Team G': FontAwesomeIcons.running,
-    'Team H': FontAwesomeIcons.skiing,
-    'Team I': FontAwesomeIcons.swimmer,
-    'Team J': FontAwesomeIcons.tableTennis,
-    'Team K': FontAwesomeIcons.dumbbell,
-    'Team L': FontAwesomeIcons.golfBall,
-    'Team M': FontAwesomeIcons.snowboarding,
-    'Team N': FontAwesomeIcons.biking,
-    'Team P': FontAwesomeIcons.horse,
-    'Team R': FontAwesomeIcons.skating,
-    'Team T': FontAwesomeIcons.water,
-    // Add more team icons here
-  };
 
   void _showNewTeamModal(BuildContext context) {
     showModalBottomSheet(
@@ -120,6 +98,16 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
     );
   }
 
+  Color _getBackgroundColor(int teamMembers) {
+    if (teamMembers < 12) {
+      return Colors.green;
+    } else if (teamMembers < 15) {
+      return Colors.yellow;
+    } else {
+      return Colors.red;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -142,129 +130,133 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
           _buildPopupMenu(context),
         ],
       ),
-      body: StreamBuilder<List<Team>>(
-        stream: _loadUserTeamsStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Failed to load teams: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            final teams = snapshot.data!;
-            if (teams.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('You have not joined any teams yet.'),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        _showNewTeamModal(context);
-                      },
-                      child: const Text('Create a Team'),
-                    ),
-                    const SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Navigate to a page to join a team
-                      },
-                      child: const Text('Join a Team'),
-                    ),
-                  ],
-                ),
-              );
-            } else {
-              return ListView.builder(
-                itemCount: teams.length,
-                itemBuilder: (context, index) {
-                  final team = teams[index];
-                  final latestMessage = 'This is a message for team ${team.name}';
-                  final messageCount = (10 + index) % 100;
-                  final teamMembers = Random().nextInt(11) + 10; // 10 到 20 之间的任意数字
+      body: Padding(
+        padding: const EdgeInsets.only(top: 10.0), // Add top padding
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Text(
+                'Your Team List!',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Expanded(
+              child: StreamBuilder<List<Team>>(
+                stream: _loadUserTeamsStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Failed to load teams: ${snapshot.error}'));
+                  } else if (snapshot.hasData) {
+                    final teams = snapshot.data!;
+                    if (teams.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('You have not joined any teams yet.'),
+                            const SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: () {
+                                _showNewTeamModal(context);
+                              },
+                              child: const Text('Create a Team'),
+                            ),
+                            const SizedBox(height: 10),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Navigate to a page to join a team
+                              },
+                              child: const Text('Join a Team'),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      return ListView.builder(
+                        itemCount: teams.length,
+                        itemBuilder: (context, index) {
+                          final team = teams[index];
+                          final teamMembers = Random().nextInt(11) + 10; // Random number between 10 and 20
+                          final teamInitial = team.name.isNotEmpty ? team.name[0].toUpperCase() : '?';
 
-                  IconData teamIcon;
-                  if (team.id == 'team6702') {
-                    teamIcon = FontAwesomeIcons.flagCheckered;
-                  } else if (team.id == 'team6703') {
-                    teamIcon = FontAwesomeIcons.footballBall;
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              side: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
+                            ),
+                            elevation: 2,
+                            color: Colors.grey[50],
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.blue,
+                                child: Text(
+                                  teamInitial,
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              title: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      team.name.length > 20 ? team.name.substring(0, 20) + '...' : team.name,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                  const Icon(Icons.verified, color: Colors.blue), // Add verified icon
+                                ],
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    team.name,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: TextStyle(color: Colors.grey[700]),
+                                  ),
+                                  Text(
+                                    'tags: ${team.tags.join(', ')}',
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: TextStyle(color: Colors.grey[500]),
+                                  ),
+                                  Text(
+                                    team.description ?? '',
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: TextStyle(color: Colors.grey[500]),
+                                  ),
+                                ],
+                              ),
+                              trailing: CircleAvatar(
+                                backgroundColor: _getBackgroundColor(teamMembers),
+                                child: Text(
+                                  '$teamMembers',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              onTap: () {
+                                _navigateToTeamDetail(context, team);
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    }
                   } else {
-                    teamIcon = teamIcons[team.name] ?? FontAwesomeIcons.battleNet;
+                    return const Center(child: Text('No teams found'));
                   }
-
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.blue,
-                      child: Text(
-                        '$teamMembers',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    title: Row(
-                      children: [
-                        Icon(
-                          teamIcon,
-                          color: Colors.purpleAccent,
-                        ),
-                        const SizedBox(width: 8.0),
-                        Expanded(
-                          child: Text(
-                            team.name,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          team.tags.join(', '),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          style: TextStyle(color: Colors.grey[700]),
-                        ),
-                        Text(
-                          team.description ?? '',
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          style: TextStyle(color: Colors.grey[500]),
-                        ),
-                        Container(
-                          margin: const EdgeInsets.only(top: 4.0),
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(4.0),
-                          ),
-                          child: Text(
-                            latestMessage,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            style: TextStyle(color: Colors.grey[800]),
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.message),
-                        Text('$messageCount'),
-                      ],
-                    ),
-                    onTap: () {
-                      _navigateToTeamDetail(context, team);
-                    },
-                  );
                 },
-              );
-            }
-          } else {
-            return const Center(child: Text('No teams found'));
-          }
-        },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
