@@ -5,6 +5,7 @@ import 'package:matchmatter/data/app.dart';
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
 import 'package:matchmatter/views/apps_list.dart';
+import 'package:matchmatter/views/app_detail_page.dart';
 import 'package:matchmatter/views/roles_list.dart';
 
 class AppsPage extends StatefulWidget {
@@ -27,6 +28,7 @@ class _AppsPageState extends State<AppsPage> {
   bool isLoading = true;
   late UserModel currentUser;
   Set<String> selectedRoles = {};
+  AppModel? selectedApp; // 新增变量，用于保存选中的应用
 
   @override
   void initState() {
@@ -117,13 +119,12 @@ class _AppsPageState extends State<AppsPage> {
       } else {
         selectedRoles.add(roleId);
       }
-      _updateAppsList();
+      _updateAppsForSelectedRoles();
     });
   }
 
-  void _updateAppsList() async {
+  Future<void> _updateAppsForSelectedRoles() async {
     if (selectedRoles.isEmpty) {
-      // If no roles are selected, clear the app list
       setState(() {
         apps = [];
       });
@@ -139,47 +140,68 @@ class _AppsPageState extends State<AppsPage> {
       selectedAppIds.map((appId) => AppModel.getAppData(appId, widget.teamId)),
     );
 
-    // Filter out null values
-    List<AppModel> nonNullUpdatedApps = updatedApps.where((app) => app != null).cast<AppModel>().toList();
-
     setState(() {
-      apps = nonNullUpdatedApps;
+      apps = updatedApps.whereType<AppModel>().toList(); // Filter out null values
     });
   }
 
-  List<PopupMenuEntry<String>> _buildRolesMenuItems() {
-    return [
-      ...roles.map((role) {
-        return PopupMenuItem<String>(
-          value: role.id,
-          child: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Row(
-                children: [
-                  Checkbox(
-                    value: selectedRoles.contains(role.id),
-                    onChanged: (bool? checked) {
-                      setState(() {
-                        _onRoleSelected(role.id);
-                      });
-                    },
-                  ),
-                  Text(role.name),
-                ],
-              );
-            },
-          ),
-        );
-      }).toList(),
-      const PopupMenuDivider(),
-      const PopupMenuItem<String>(
-        value: 'settings',
-        child: ListTile(
-          leading: Icon(Icons.settings),
-          title: Text('Role Settings'),
+  void _showCustomMenu(BuildContext context) async {
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+
+    await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromPoints(
+          overlay.localToGlobal(Offset.zero),
+          overlay.localToGlobal(overlay.size.bottomRight(Offset.zero)),
         ),
+        Offset.zero & overlay.size,
       ),
-    ];
+      items: [
+        ...roles.map((role) {
+          return PopupMenuItem<String>(
+            value: role.id,
+            child: StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return Row(
+                  children: [
+                    Checkbox(
+                      value: selectedRoles.contains(role.id),
+                      onChanged: (bool? checked) {
+                        setState(() {
+                          _onRoleSelected(role.id);
+                        });
+                      },
+                    ),
+                    Text(role.name),
+                  ],
+                );
+              },
+            ),
+          );
+        }).toList(),
+        const PopupMenuDivider(),
+        const PopupMenuItem<String>(
+          value: 'settings',
+          child: ListTile(
+            leading: Icon(Icons.settings),
+            title: Text('Role Settings'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _onAppSelected(AppModel app) {
+    setState(() {
+      selectedApp = app;
+    });
+  }
+
+  void _onBackToList() {
+    setState(() {
+      selectedApp = null;
+    });
   }
 
   @override
@@ -191,6 +213,11 @@ class _AppsPageState extends State<AppsPage> {
         automaticallyImplyLeading: false,
         title: Row(
           children: [
+            if (selectedApp != null)
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: _onBackToList,
+              ),
             const Spacer(),
             ..._buildAppBarActions(context),
           ],
@@ -203,7 +230,11 @@ class _AppsPageState extends State<AppsPage> {
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : showRoles ? RolesList(roles: roles) : AppsList(apps: apps, searchQuery: searchQuery),
+                : selectedApp != null
+                    ? AppDetailPage(app: selectedApp!)
+                    : showRoles
+                        ? RolesList(roles: roles)
+                        : AppsList(apps: apps, searchQuery: searchQuery, onAppSelected: _onAppSelected),
           ),
         ],
       ),
@@ -220,14 +251,11 @@ class _AppsPageState extends State<AppsPage> {
           });
         },
       ),
-      PopupMenuButton<String>(
+      IconButton(
         icon: const Icon(Icons.group),
-        onSelected: (String result) {
-          if (result == 'settings') {
-            // Navigate to settings page
-          }
+        onPressed: () {
+          _showCustomMenu(context);
         },
-        itemBuilder: (BuildContext context) => _buildRolesMenuItems(),
       ),
     ];
   }

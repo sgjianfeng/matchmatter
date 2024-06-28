@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:matchmatter/data/app.dart';
-import 'package:matchmatter/views/app_detail_page.dart';
 
 class AppsList extends StatelessWidget {
   final List<AppModel> apps;
   final String searchQuery;
+  final Function(AppModel) onAppSelected;
 
-  const AppsList({super.key, required this.apps, required this.searchQuery});
+  const AppsList({super.key, required this.apps, required this.searchQuery, required this.onAppSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -24,33 +24,25 @@ class AppsList extends StatelessWidget {
       itemBuilder: (context, index) {
         final app = filteredApps[index];
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // Adjust the padding for more spacing
           child: Card(
+            elevation: 4.0, // Slight elevation for a subtle floating effect
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0), // Rounded corners for a softer look
+            ),
             child: InkWell(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => AppDetailPage(app: app)),
-                );
+                onAppSelected(app); // Call the callback function
               },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text('${app.name} (${app.id})'),
-                  ),
-                  ...app.permissions.map((permission) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(permission.name),
-                        subtitle: Text(permission.data.toString()),
-                      ),
-                    );
-                  }),
-                ],
+              child: ListTile(
+                title: Text(
+                  '${app.name} (${app.id})',
+                  style: Theme.of(context).textTheme.titleMedium, // Use theme for consistent styling
+                ),
+                subtitle: Text(
+                  app.description ?? 'No description available',
+                  style: Theme.of(context).textTheme.bodySmall, // Use theme for consistent styling
+                ),
               ),
             ),
           ),

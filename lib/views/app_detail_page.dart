@@ -8,28 +8,42 @@ class AppDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(app.name),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('ID: ${app.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text('Description: ${app.description}'),
-            const SizedBox(height: 10),
-            const Text('Permissions:'),
-            ...app.permissions.map((permission) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'App ID: ${app.id}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Description: ${app.description ?? 'No description available'}',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Permissions:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView(
+            children: app.permissions.map((permission) {
               return ListTile(
                 title: Text(permission.name),
                 subtitle: Text(permission.data.toString()),
               );
-            }),
-          ],
+            }).toList(),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
