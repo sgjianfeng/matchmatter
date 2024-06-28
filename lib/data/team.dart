@@ -19,9 +19,9 @@ class RoleModel {
     required this.teamId,
     this.creatorId,
     required this.data,
-  }) : _name = name ?? id; // 如果 name 没有提供，默认设置为 id
+  }) : _name = name ?? id;
 
-  String get name => _name; // 获取 name
+  String get name => _name;
 
   factory RoleModel.fromMap(Map<String, dynamic> data) {
     return RoleModel(
@@ -164,7 +164,6 @@ class Team {
           await _assignPermissionToRole(app, 'appusers', role, creatorId);
         }
 
-        // Create RoleModel for the current role
         RoleModel roleModel = RoleModel(
           id: role,
           name: role,
@@ -173,13 +172,11 @@ class Team {
           data: {},
         );
 
-        // 创建 MyTeamApp 实例
         MyTeamApp myTeamApp = await MyTeamApp.createOrGet(
           creator: creatorId,
           ownerTeamId: id,
         );
 
-        // Assign adminrole to the creator of each role
         await _assignPermissionToUser(
             myTeamApp, 'adminrole', creatorId, roleModel);
       }
@@ -245,7 +242,6 @@ class Team {
     List<RoleModel> allRoles = [];
 
     for (String roleId in roles.keys) {
-      // 从 Firestore 获取 role 的详细信息
       DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance
           .collection('roles')
           .doc(roleId)
@@ -254,7 +250,6 @@ class Team {
       if (roleSnapshot.exists) {
         Map<String, dynamic> roleData =
             roleSnapshot.data() as Map<String, dynamic>;
-        // 确保 roleData 中有必要的字段
         roleData['id'] = roleId;
         roleData['name'] = roleData['name'] ?? roleId;
         roleData['description'] = roleData['description'] ?? '';
@@ -271,7 +266,6 @@ class Team {
 
     for (String roleId in roles.keys) {
       if (roles[roleId]!.contains(userId)) {
-        // 从 Firestore 获取 role 的详细信息
         DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance
             .collection('roles')
             .doc(roleId)
@@ -280,7 +274,6 @@ class Team {
         if (roleSnapshot.exists) {
           Map<String, dynamic> roleData =
               roleSnapshot.data() as Map<String, dynamic>;
-          // 确保 roleData 中有必要的字段
           roleData['id'] = roleId;
           roleData['name'] = roleData['name'] ?? roleId;
           roleData['description'] = roleData['description'] ?? '';
@@ -337,12 +330,10 @@ class Team {
 
   Future<bool> hasAdminRolePermission(
       RoleModel roleModel, String userId) async {
-    // Check if the userId exists in the roles map for the given roleModel
     if (!roles[roleModel.id]!.contains(userId)) {
       return false;
     }
 
-    // Retrieve the user's permissions document from Firestore
     DocumentSnapshot userDoc = await FirebaseFirestore.instance
         .collection('userPermissions')
         .doc(userId)

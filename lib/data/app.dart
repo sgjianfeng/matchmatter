@@ -358,7 +358,7 @@ Future<void> addPermissionToRole(
   }
 
   if (permissionUserScope == PermissionUserScope.approveduser && !approveModel.status.permissionUser) {
-    print('PermissionUser status must be true to add this permission.');
+    print('PermissionUser status must be true to add this permission。');
     return;
   }
 
@@ -480,11 +480,9 @@ Future<void> addPermissionToUser(
   }
 }
 
-
 // Function to get user permissions in a team
-Future<UserPermissionsResult> getUserPermissionsInTeam(String teamId, String userId) async {
+Future<List<RolePermissions>> getUserPermissionsInTeam(String teamId, String userId) async {
   try {
-    // Step 1: Get user roles in the team
     DocumentSnapshot teamSnapshot = await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
     if (!teamSnapshot.exists) {
       throw Exception('Team does not exist');
@@ -500,67 +498,31 @@ Future<UserPermissionsResult> getUserPermissionsInTeam(String teamId, String use
       }
     });
 
-    // Debug: Print user roles
     print('User roles: $userRoles');
 
-    // Step 2: Get permissions for each role
     List<RolePermissions> rolesPermissions = [];
-    List<AppPermissions> appsPermissions = [];
-    Set<String> appIds = {};
 
     DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance.collection('rolePermissions').doc(teamId).get();
     if (roleSnapshot.exists) {
       Map<String, dynamic> rolePermissionsData = roleSnapshot.data() as Map<String, dynamic>;
       rolePermissionsData.forEach((appId, permissionsList) {
         if (permissionsList is List) {
-          List<String> rolePermissions = [];
           for (var perm in permissionsList) {
             if (userRoles.contains(perm['roleId'])) {
-              rolePermissions.add(perm['permissionId']);
-              appIds.add(appId);
+              rolesPermissions.add(RolePermissions(
+                roleId: perm['roleId'],
+                teamId: teamId,
+                appId: appId,
+                permissionId: perm['permissionId'],
+              ));
             }
           }
-          rolesPermissions.add(RolePermissions(
-            roleId: userRoles.join(','), // Assuming the permissions apply to the combination of roles
-            roleName: userRoles.join(','),
-            permissions: rolePermissions,
-          ));
         }
       });
     }
 
-    // Debug: Print roles permissions
     print('Roles permissions: $rolesPermissions');
-
-    // Step 3: Get apps and aggregate permissions for each app
-    for (String appId in appIds) {
-      DocumentSnapshot appSnapshot = await FirebaseFirestore.instance.collection('apps').doc('$appId-$teamId').get();
-      if (appSnapshot.exists) {
-        Map<String, dynamic> appData = appSnapshot.data() as Map<String, dynamic>;
-        String appName = appData['name'];
-        List<String> appPermissions = [];
-
-        for (var rolePerm in rolesPermissions) {
-          if (rolePerm.permissions.contains(appId)) {
-            appPermissions.addAll(rolePerm.permissions);
-          }
-        }
-
-        appsPermissions.add(AppPermissions(
-          appId: appId,
-          appName: appName,
-          permissions: appPermissions.toSet().toList(),
-        ));
-      }
-    }
-
-    // Debug: Print apps permissions
-    print('Apps permissions: $appsPermissions');
-
-    return UserPermissionsResult(
-      appsPermissions: appsPermissions,
-      rolesPermissions: rolesPermissions,
-    );
+    return rolesPermissions;
   } catch (error) {
     print('Error fetching data: $error');
     rethrow;
@@ -592,13 +554,32 @@ class AppPermissions {
 
 class RolePermissions {
   final String roleId;
-  final String roleName;
-  final List<String> permissions;
+  final String teamId;
+  final String appId;
+  final String permissionId;
 
   RolePermissions({
     required this.roleId,
-    required this.roleName,
-    required this.permissions,
+    required this.teamId,
+    required this.appId,
+    required this.permissionId,
   });
-}
 
+  factory RolePermissions.fromMap(Map<String, dynamic> data) {
+    return RolePermissions(
+      roleId: data['roleId'],
+      teamId: data['teamId'],
+      appId: data['appId'],
+      permissionId: data['permissionId'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'roleId': roleId,
+      'teamId': teamId,
+      'appId': appId,
+      'permissionId': permissionId,
+    };
+  }
+}

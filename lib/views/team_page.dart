@@ -3,7 +3,7 @@ import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
 import 'package:matchmatter/providers/bottom_navigation_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:matchmatter/views/apps_page_demo1.dart';
+import 'package:matchmatter/views/apps_page.dart';
 import 'package:matchmatter/views/team_profile_page.dart';
 import 'package:matchmatter/views/team_messages_page.dart'; // Import the TeamMessagesPage
 

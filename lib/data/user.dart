@@ -10,19 +10,20 @@ class UserModel {
 
   UserModel({
     required this.uid,
-     this.name = 'Unknown',
-     this.phoneNumber = 'No phone number',
-     this.email ='No email',
-     this.createdAt,
+    this.name = 'Unknown',
+    this.phoneNumber = 'No phone number',
+    this.email = 'No email',
+    this.createdAt,
   });
 
   factory UserModel.fromDocumentSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
     return UserModel(
       uid: doc.id,
-      name: doc.data()?['name'] ?? 'Unknown',
-      phoneNumber: doc.data()?['phoneNumber'] ?? 'No phone number',
-      email: doc.data()?['email'] ?? 'No email',
-      createdAt: doc['createdAt'],
+      name: data?['name'] ?? 'Unknown',
+      phoneNumber: data?['phoneNumber'] ?? 'No phone number',
+      email: data?['email'] ?? 'No email',
+      createdAt: data?['createdAt'],
     );
   }
 
@@ -42,8 +43,7 @@ class UserDatabaseService {
 
   UserDatabaseService({this.uid});
 
-  final CollectionReference _userCollection =
-      FirebaseFirestore.instance.collection('users');
+  final CollectionReference _userCollection = FirebaseFirestore.instance.collection('users');
 
   Future<UserModel> updateUserData(String name, String phoneNumber, String email) async {
     try {
@@ -51,8 +51,8 @@ class UserDatabaseService {
         'name': name,
         'phoneNumber': phoneNumber,
         'email': email,
-        'createdAt': Timestamp.now(),
-      });
+        'createdAt': FieldValue.serverTimestamp(), // Use server timestamp
+      }, SetOptions(merge: true)); // Merge to avoid overwriting existing fields
 
       return await getUserData();
     } catch (e) {
@@ -62,25 +62,33 @@ class UserDatabaseService {
   }
 
   Future<UserModel> getUserData() async {
-    final DocumentSnapshot<Object?> docSnapshot = await _userCollection.doc(uid).get();
-    if (docSnapshot.exists) {
-      final DocumentSnapshot<Map<String, dynamic>> doc =
-          docSnapshot as DocumentSnapshot<Map<String, dynamic>>;
-      return UserModel.fromDocumentSnapshot(doc);
-    } else {
-      // Fallback in case the user data is not found in Firestore
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        return UserModel.fromFirebaseUser(user);
+    try {
+      final docSnapshot = await _userCollection.doc(uid).get();
+      if (docSnapshot.exists) {
+        final doc = docSnapshot as DocumentSnapshot<Map<String, dynamic>>;
+        return UserModel.fromDocumentSnapshot(doc);
       } else {
-        return UserModel(
-          uid: '',
-          name: 'Unknown',
-          phoneNumber: 'No phone number',
-          email: 'No email',
-          createdAt: Timestamp.now(),
-        );
+        // Fallback in case the user data is not found in Firestore
+        return _getFallbackUserData();
       }
+    } catch (e) {
+      print('Error retrieving user data: $e');
+      throw Exception('Failed to retrieve user data');
+    }
+  }
+
+  UserModel _getFallbackUserData() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return UserModel.fromFirebaseUser(user);
+    } else {
+      return UserModel(
+        uid: '',
+        name: 'Unknown',
+        phoneNumber: 'No phone number',
+        email: 'No email',
+        createdAt: Timestamp.now(),
+      );
     }
   }
 
@@ -109,17 +117,14 @@ class UserDatabaseService {
             'name': 'MatchMatterAdmin',
             'phoneNumber': '1234567890',
             'email': adminEmail,
-            'createdAt': Timestamp.now(),
+            'createdAt': FieldValue.serverTimestamp(),
           });
           print('Default admin user created.');
-
-          //await Team.initializeDefaultTeams();
 
           // Return true indicating admin was created
           return true;
         } else {
           print('Default admin user already exists.');
-          //await Team.initializeDefaultTeams();
           return false;
         }
       } catch (e) {
