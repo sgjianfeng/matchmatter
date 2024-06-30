@@ -63,8 +63,7 @@ class Team {
     required this.roles,
   });
 
-  Future<void> addMember(UserModel user,
-      {required String role, required String approverId}) async {
+  Future<void> addMember(UserModel user, {required String role, required String approverId}) async {
     roles.putIfAbsent(role, () => []);
     if (!roles[role]!.contains(user.uid)) {
       RoleModel roleModel = RoleModel(
@@ -75,9 +74,8 @@ class Team {
         data: {},
       );
 
-      bool approverHasAdminRole =
-          await hasAdminRolePermission(roleModel, approverId);
-      if (!approverHasAdminRole) {
+      bool approverIsRoleAdmin = await isRoleAdmin(roleModel, approverId);
+      if (!approverIsRoleAdmin) {
         throw Exception('Approver does not have the admin role permission.');
       }
       roles[role]!.add(user.uid);
@@ -87,8 +85,7 @@ class Team {
   }
 
   Future<void> _updateRolesInFirestore() async {
-    DocumentReference teamRef =
-        FirebaseFirestore.instance.collection('teams').doc(id);
+    DocumentReference teamRef = FirebaseFirestore.instance.collection('teams').doc(id);
     await teamRef.update({'roles': roles});
   }
 
@@ -99,6 +96,9 @@ class Team {
     _initializeDefaultRoles(creatorId);
 
     await _saveTeamToFirestore();
+
+    await _addRoleAdmin(creatorId, 'admins');
+    await _addRoleAdmin(creatorId, 'members');
 
     MyTeamApp app = await MyTeamApp.createOrGet(
       creator: creatorId,
@@ -124,8 +124,7 @@ class Team {
   }
 
   Future<void> _checkIfTeamExists() async {
-    final DocumentSnapshot teamSnapshot =
-        await FirebaseFirestore.instance.collection('teams').doc(id).get();
+    final DocumentSnapshot teamSnapshot = await FirebaseFirestore.instance.collection('teams').doc(id).get();
     if (teamSnapshot.exists) {
       print('Team with ID $id already exists.');
       return;
@@ -163,30 +162,12 @@ class Team {
         } else if (role == 'members') {
           await _assignPermissionToRole(app, 'appusers', role, creatorId);
         }
-
-        RoleModel roleModel = RoleModel(
-          id: role,
-          name: role,
-          teamId: id,
-          creatorId: creatorId,
-          data: {},
-        );
-
-        MyTeamApp myTeamApp = await MyTeamApp.createOrGet(
-          creator: creatorId,
-          ownerTeamId: id,
-        );
-
-        await _assignPermissionToUser(
-            myTeamApp, 'adminrole', creatorId, roleModel);
       }
     }
   }
 
-  Future<void> _assignPermissionToRole(AppModel app, String permissionId,
-      String roleName, String creatorId) async {
-    Permission permission =
-        app.permissions.firstWhere((perm) => perm.id == permissionId);
+  Future<void> _assignPermissionToRole(AppModel app, String permissionId, String roleName, String creatorId) async {
+    Permission permission = app.permissions.firstWhere((perm) => perm.id == permissionId);
 
     RoleModel role = RoleModel(
       id: roleName,
@@ -200,9 +181,9 @@ class Team {
       permission,
       role,
       (
-          {required Permission permission,
-          required RoleModel role,
-          String? userId}) async {
+        {required Permission permission,
+        required RoleModel role,
+        String? userId}) async {
         return ApproveModel(
           approverId: creatorId,
           approverRole: role,
@@ -213,43 +194,69 @@ class Team {
     );
   }
 
-  Future<void> _assignPermissionToUser(AppModel app, String permissionId,
-      String userId, RoleModel userRole) async {
-    Permission permission =
-        app.permissions.firstWhere((perm) => perm.id == permissionId);
+  Future<void> _addRoleAdmin(String userId, String roleId) async {
+    await FirebaseFirestore.instance.collection('roleadmins').add({
+      'roleId': roleId,
+      'teamId': id,
+      'adminId': userId,
+    });
+  }
 
-    await addPermissionToUser(
-      permission,
-      userRole,
-      userId,
-      (
-          {required Permission permission,
-          required RoleModel role,
-          String? userId}) async {
-        return ApproveModel(
-          approverId: userId ?? '',
-          approverRole: userRole,
-          status: Status(
-            permissionUser: true,
-          ),
-          data: {},
-        );
-      },
+  Future<void> _removeRoleAdmin(String userId, String roleId) async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('roleadmins')
+        .where('roleId', isEqualTo: roleId)
+        .where('teamId', isEqualTo: id)
+        .where('adminId', isEqualTo: userId)
+        .get();
+
+    for (var doc in querySnapshot.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  Future<void> addRoleAdmin(String adminId, String userId, String roleId) async {
+    RoleModel roleModel = RoleModel(
+      id: roleId,
+      name: roleId,
+      teamId: id,
+      creatorId: adminId,
+      data: {},
     );
+
+    bool isAdmin = await isRoleAdmin(roleModel, adminId);
+    if (!isAdmin) {
+      throw Exception('Only a role admin can add another admin.');
+    }
+
+    await _addRoleAdmin(userId, roleId);
+  }
+
+  Future<void> removeRoleAdmin(String adminId, String userId, String roleId) async {
+    RoleModel roleModel = RoleModel(
+      id: roleId,
+      name: roleId,
+      teamId: id,
+      creatorId: adminId,
+      data: {},
+    );
+
+    bool isAdmin = await isRoleAdmin(roleModel, adminId);
+    if (!isAdmin) {
+      throw Exception('Only a role admin can remove another admin.');
+    }
+
+    await _removeRoleAdmin(userId, roleId);
   }
 
   Future<List<RoleModel>> getAllRoles() async {
     List<RoleModel> allRoles = [];
 
     for (String roleId in roles.keys) {
-      DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance
-          .collection('roles')
-          .doc(roleId)
-          .get();
+      DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance.collection('roles').doc(roleId).get();
 
       if (roleSnapshot.exists) {
-        Map<String, dynamic> roleData =
-            roleSnapshot.data() as Map<String, dynamic>;
+        Map<String, dynamic> roleData = roleSnapshot.data() as Map<String, dynamic>;
         roleData['id'] = roleId;
         roleData['name'] = roleData['name'] ?? roleId;
         roleData['description'] = roleData['description'] ?? '';
@@ -266,14 +273,10 @@ class Team {
 
     for (String roleId in roles.keys) {
       if (roles[roleId]!.contains(userId)) {
-        DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance
-            .collection('roles')
-            .doc(roleId)
-            .get();
+        DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance.collection('roles').doc(roleId).get();
 
         if (roleSnapshot.exists) {
-          Map<String, dynamic> roleData =
-              roleSnapshot.data() as Map<String, dynamic>;
+          Map<String, dynamic> roleData = roleSnapshot.data() as Map<String, dynamic>;
           roleData['id'] = roleId;
           roleData['name'] = roleData['name'] ?? roleId;
           roleData['description'] = roleData['description'] ?? '';
@@ -292,8 +295,7 @@ class Team {
   }
 
   static Future<Team> getTeamData(String teamId) async {
-    DocumentSnapshot<Map<String, dynamic>> docSnapshot =
-        await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
+    DocumentSnapshot<Map<String, dynamic>> docSnapshot = await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
     if (!docSnapshot.exists) {
       throw Exception('Team does not exist');
     }
@@ -307,13 +309,11 @@ class Team {
       description: data['description'] ?? 'No description available',
       createdAt: data['createdAt'] ?? Timestamp.now(),
       tags: data['tags']?.cast<String>() ?? [],
-      roles: rolesData
-          .map((key, value) => MapEntry(key, List<String>.from(value))),
+      roles: rolesData.map((key, value) => MapEntry(key, List<String>.from(value))),
     );
   }
 
-  static Future<Map<String, List<UserModel>>> getTeamRoles(
-      Map<String, List<String>> roles) async {
+  static Future<Map<String, List<UserModel>>> getTeamRoles(Map<String, List<String>> roles) async {
     Map<String, List<UserModel>> rolesWithUsers = {};
 
     for (var role in roles.entries) {
@@ -328,33 +328,14 @@ class Team {
     return rolesWithUsers;
   }
 
-  Future<bool> hasAdminRolePermission(
-      RoleModel roleModel, String userId) async {
-    if (!roles[roleModel.id]!.contains(userId)) {
-      return false;
-    }
-
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('userPermissions')
-        .doc(userId)
+  Future<bool> isRoleAdmin(RoleModel roleModel, String userId) async {
+    final roleAdminSnapshot = await FirebaseFirestore.instance
+        .collection('roleadmins')
+        .where('roleId', isEqualTo: roleModel.id)
+        .where('teamId', isEqualTo: roleModel.teamId)
+        .where('adminId', isEqualTo: userId)
         .get();
 
-    if (userDoc.exists) {
-      var userData = userDoc.data() as Map<String, dynamic>;
-      var teamPermissions = userData[roleModel.teamId] as Map<String, dynamic>?;
-
-      if (teamPermissions != null) {
-        var rolePermissions = teamPermissions[roleModel.id] as List<dynamic>?;
-
-        if (rolePermissions != null) {
-          return rolePermissions.any((perm) =>
-              perm['permissionId'] == 'adminrole' &&
-              perm['approverRoleTeamId'] == roleModel.teamId &&
-              perm['approverRoleId'] == roleModel.id &&
-              perm['status']['permissionUser'] == true);
-        }
-      }
-    }
-    return false;
+    return roleAdminSnapshot.docs.isNotEmpty;
   }
 }
