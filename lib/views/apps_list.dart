@@ -6,7 +6,12 @@ class AppsList extends StatelessWidget {
   final String searchQuery;
   final Function(AppModel) onAppSelected;
 
-  const AppsList({super.key, required this.apps, required this.searchQuery, required this.onAppSelected});
+  const AppsList({
+    super.key,
+    required this.apps,
+    required this.searchQuery,
+    required this.onAppSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,24 +29,25 @@ class AppsList extends StatelessWidget {
       itemBuilder: (context, index) {
         final app = filteredApps[index];
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // Adjust the padding for more spacing
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
           child: Card(
-            elevation: 4.0, // Slight elevation for a subtle floating effect
+            elevation: 4.0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0), // Rounded corners for a softer look
+              borderRadius: BorderRadius.circular(10.0),
             ),
             child: InkWell(
               onTap: () {
-                onAppSelected(app); // Call the callback function
+                onAppSelected(app);
               },
               child: ListTile(
+                tileColor: _getTileColor(app), // 设置背景颜色
                 title: Text(
                   '${app.name} (${app.id})',
-                  style: Theme.of(context).textTheme.titleMedium, // Use theme for consistent styling
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 subtitle: Text(
                   app.description ?? 'No description available',
-                  style: Theme.of(context).textTheme.bodySmall, // Use theme for consistent styling
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
             ),
@@ -49,5 +55,16 @@ class AppsList extends StatelessWidget {
         );
       },
     );
+  }
+
+  Color _getTileColor(AppModel app) {
+    // 根据应用属性设置背景颜色，这里仅作示例
+    if (app.name.toLowerCase().contains('important')) {
+      return Colors.red.withOpacity(0.1);
+    } else if (app.name.toLowerCase().contains('secondary')) {
+      return Colors.blue.withOpacity(0.1);
+    } else {
+      return Colors.lightGreen.withOpacity(0.1); // 默认背景颜色
+    }
   }
 }

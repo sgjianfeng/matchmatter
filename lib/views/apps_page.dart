@@ -179,7 +179,7 @@ class _AppsPageState extends State<AppsPage> {
               },
             ),
           );
-        }).toList(),
+        }),
         const PopupMenuDivider(),
         const PopupMenuItem<String>(
           value: 'settings',

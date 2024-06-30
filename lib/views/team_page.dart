@@ -63,7 +63,7 @@ class _TeamPageState extends State<TeamPage> {
             } else if (snapshot.hasData) {
               return TabBarView(
                 children: [
-                  TeamMessagesPage(),  // Use the TeamMessagesPage here
+                  const TeamMessagesPage(),  // Use the TeamMessagesPage here
                   _buildChatsTab(),
                   AppsPage(teamId: widget.team.id, user: null),  // Pass teamId to AppsPage
                   TeamProfilePage(

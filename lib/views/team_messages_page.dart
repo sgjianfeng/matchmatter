@@ -158,7 +158,7 @@ class _TeamMessagesPageState extends State<TeamMessagesPage> {
 class MessageCard extends StatefulWidget {
   final Message message;
 
-  const MessageCard({Key? key, required this.message}) : super(key: key);
+  const MessageCard({super.key, required this.message});
 
   @override
   _MessageCardState createState() => _MessageCardState();
@@ -229,11 +229,11 @@ class _MessageCardState extends State<MessageCard> {
               const SizedBox(height: 8),
               Text('Action: ${message.action}'),
               const SizedBox(height: 8),
-              Text('Participants:'),
+              const Text('Participants:'),
               ...message.participants.map((participant) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2.0),
                 child: Text(participant),
-              )).toList(),
+              )),
               const SizedBox(height: 10),
               Align(
                 alignment: Alignment.centerRight,
