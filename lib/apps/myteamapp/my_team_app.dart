@@ -4,8 +4,8 @@ import 'package:matchmatter/data/user.dart';
 
 class MyTeamApp extends AppModel {
   MyTeamApp({
-    required String super.creator,
-    required super.ownerTeamId,
+    required String creator,
+    required String ownerTeamId,
   }) : super(
           id: 'myteamapp',
           name: 'MyTeamApp',
@@ -14,6 +14,9 @@ class MyTeamApp extends AppModel {
           scopeData: {},
           permissions: [],
           createdAt: Timestamp.now(),
+          ownerTeamId: ownerTeamId,
+          creator: creator,
+          appWidgetList: [], // Initialize as empty list
         );
 
   static Future<MyTeamApp> createOrGet({
@@ -34,8 +37,11 @@ class MyTeamApp extends AppModel {
     // Convert AppModel to MyTeamApp
     MyTeamApp myTeamApp = MyTeamApp.fromAppModel(app);
 
-    // Add default admin role permission if not already added
-    await myTeamApp.addDefaultAdminRolePermission();
+    // Check if the appWidgetList is empty and add default widgets if necessary
+    if (myTeamApp.appWidgetList.isEmpty) {
+      myTeamApp.appWidgetList = _defaultWidgets();
+      await myTeamApp.saveToFirestore();
+    }
 
     return myTeamApp;
   }
@@ -48,22 +54,26 @@ class MyTeamApp extends AppModel {
     )..permissions.addAll(app.permissions);
   }
 
-  Future<void> addDefaultAdminRolePermission() async {
-    // Check if the admin role permission is already added
-    bool hasAdminRolePermission = permissions.any((perm) => perm.id == 'adminrole');
-    if (!hasAdminRolePermission) {
-      permissions.add(
-        Permission(
-          id: 'adminrole',
-          name: 'AdminRole',
-          appId: id,
-          teamScope: PermissionTeamScope.ownerteam,
-          roleScope: PermissionRoleScope.anyrole,
-          userScope: PermissionUserScope.anyuser,
-          data: {},
-        ),
-      );
-      await saveToFirestore();
-    }
+  @override
+  List<AppWidget> getAppWidgetList() {
+    return appWidgetList;
+  }
+
+  // Method to define default widgets
+  static List<AppWidget> _defaultWidgets() {
+    return [
+      AppWidget(
+        name: 'myroles',
+        title: 'My Roles',
+        permissions: ['appusers'],
+        description: 'My roles in team',
+      ),
+      AppWidget(
+        name: 'teamroles',
+        title: 'Team Roles',
+        permissions: ['appadmins'],
+        description: 'Manage team roles',
+      ),
+    ];
   }
 }

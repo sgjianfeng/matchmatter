@@ -203,7 +203,7 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      team.name.length > 20 ? team.name.substring(0, 20) + '...' : team.name,
+                                      team.name.length > 20 ? '${team.name.substring(0, 20)}...' : team.name,
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 1,
                                     ),

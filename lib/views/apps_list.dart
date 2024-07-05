@@ -64,7 +64,7 @@ class AppsList extends StatelessWidget {
     } else if (app.name.toLowerCase().contains('secondary')) {
       return Colors.blue.withOpacity(0.1);
     } else {
-      return Colors.lightGreen.withOpacity(0.1); // 默认背景颜色
+      return const Color.fromARGB(255, 183, 216, 233).withOpacity(0.1); // 默认背景颜色
     }
   }
 }

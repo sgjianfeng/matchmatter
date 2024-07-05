@@ -5,7 +5,7 @@ import 'package:matchmatter/data/app.dart';
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
 import 'package:matchmatter/views/apps_list.dart';
-import 'package:matchmatter/views/app_detail_page.dart';
+import 'package:matchmatter/views/app_widget_list_page.dart'; // Import AppWidgetListPage
 import 'package:matchmatter/views/roles_list.dart';
 
 class AppsPage extends StatefulWidget {
@@ -65,7 +65,7 @@ class _AppsPageState extends State<AppsPage> {
 
   Future<void> _fetchData() async {
     try {
-      rolesPermissions = await getUserPermissionsInTeam(widget.teamId, currentUser.uid);
+      rolesPermissions = await getUserRolePermissions(widget.teamId, currentUser.uid);
       final apps = await _mapAppPermissions(rolesPermissions);
       final roles = _mapRolePermissions(rolesPermissions);
 
@@ -231,7 +231,7 @@ class _AppsPageState extends State<AppsPage> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : selectedApp != null
-                    ? AppDetailPage(app: selectedApp!)
+                    ? AppWidgetListPage(appId: selectedApp!.id, teamId: widget.teamId)
                     : showRoles
                         ? RolesList(roles: roles)
                         : AppsList(apps: apps, searchQuery: searchQuery, onAppSelected: _onAppSelected),
