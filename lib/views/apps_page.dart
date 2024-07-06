@@ -4,8 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:matchmatter/data/app.dart';
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
+import 'package:matchmatter/views/app_widget_page.dart';
 import 'package:matchmatter/views/apps_list.dart';
 import 'package:matchmatter/views/app_widget_list_page.dart'; // Import AppWidgetListPage
+import 'package:matchmatter/views/custom_appbar_for_apps.dart';
 import 'package:matchmatter/views/roles_list.dart';
 
 class AppsPage extends StatefulWidget {
@@ -29,6 +31,7 @@ class _AppsPageState extends State<AppsPage> {
   late UserModel currentUser;
   Set<String> selectedRoles = {};
   AppModel? selectedApp; // 新增变量，用于保存选中的应用
+  AppWidget? selectedWidget; // 新增变量，用于保存选中的部件
 
   @override
   void initState() {
@@ -195,33 +198,45 @@ class _AppsPageState extends State<AppsPage> {
   void _onAppSelected(AppModel app) {
     setState(() {
       selectedApp = app;
+      selectedWidget = null; // Reset selectedWidget when a new app is selected
+    });
+  }
+
+  void _onWidgetSelected(AppWidget widget) {
+    setState(() {
+      selectedWidget = widget;
     });
   }
 
   void _onBackToList() {
     setState(() {
-      selectedApp = null;
+      if (selectedWidget != null) {
+        selectedWidget = null;
+      } else {
+        selectedApp = null;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
-        automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            if (selectedApp != null)
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _onBackToList,
-              ),
-            const Spacer(),
-            ..._buildAppBarActions(context),
-          ],
-        ),
+      appBar: CustomAppBarForApps(
+        title: selectedWidget != null
+            ? selectedWidget!.title
+            : selectedApp != null
+                ? selectedApp!.name
+                : '',
+        showBackButton: selectedApp != null,
+        onBackButtonPressed: _onBackToList,
+        onSearchIconPressed: () {
+          setState(() {
+            showSearchBar = !showSearchBar;
+          });
+        },
+        onGroupIconPressed: () {
+          _showCustomMenu(context);
+        },
       ),
       body: Column(
         children: [
@@ -231,7 +246,9 @@ class _AppsPageState extends State<AppsPage> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : selectedApp != null
-                    ? AppWidgetListPage(appId: selectedApp!.id, teamId: widget.teamId)
+                    ? selectedWidget != null
+                        ? AppWidgetPage(app: selectedApp!, appWidget: selectedWidget!, teamId: widget.teamId, roles: selectedRoles.toList())
+                        : AppWidgetListPage(app: selectedApp!, teamId: widget.teamId, onWidgetSelected: _onWidgetSelected)
                     : showRoles
                         ? RolesList(roles: roles)
                         : AppsList(apps: apps, searchQuery: searchQuery, onAppSelected: _onAppSelected),
@@ -239,25 +256,6 @@ class _AppsPageState extends State<AppsPage> {
         ],
       ),
     );
-  }
-
-  List<Widget> _buildAppBarActions(BuildContext context) {
-    return [
-      IconButton(
-        icon: const Icon(Icons.search),
-        onPressed: () {
-          setState(() {
-            showSearchBar = !showSearchBar;
-          });
-        },
-      ),
-      IconButton(
-        icon: const Icon(Icons.group),
-        onPressed: () {
-          _showCustomMenu(context);
-        },
-      ),
-    ];
   }
 
   Widget _buildSearchBar() {
@@ -275,5 +273,9 @@ class _AppsPageState extends State<AppsPage> {
         },
       ),
     );
+  }
+
+  String truncateWithEllipsis(int cutoff, String myString) {
+    return (myString.length <= cutoff) ? myString : '${myString.substring(0, cutoff)}...';
   }
 }
