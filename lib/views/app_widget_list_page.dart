@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:matchmatter/data/app.dart';
 import 'package:matchmatter/data/user.dart';
@@ -27,6 +28,11 @@ class _AppWidgetListPageState extends State<AppWidgetListPage> {
     final userId = UserDatabaseService.getCurrentUserId();
     AppWidgetsRegistry.registerAllForApp(widget.app.id); // 注册当前 app 的所有小部件
     rolesPermissionsFuture = getUserRolePermissions(widget.teamId, userId);
+    _setAppId();
+  }
+
+  Future<void> _setAppId() async {
+    await UserDatabaseService(uid: FirebaseAuth.instance.currentUser?.uid).setAppId(widget.app.id);
   }
 
   @override
@@ -78,3 +84,4 @@ class _AppWidgetListPageState extends State<AppWidgetListPage> {
     );
   }
 }
+

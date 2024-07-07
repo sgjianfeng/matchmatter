@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
@@ -23,6 +24,11 @@ class _TeamPageState extends State<TeamPage> {
   void initState() {
     super.initState();
     rolesFuture = _loadRoles();
+    _setCurrentTeamId();
+  }
+
+  Future<void> _setCurrentTeamId() async {
+    await UserDatabaseService(uid: FirebaseAuth.instance.currentUser?.uid).setTeamId(widget.team.id);
   }
 
   Future<Map<String, List<UserModel>>> _loadRoles() async {
@@ -102,3 +108,4 @@ class _TeamPageState extends State<TeamPage> {
     );
   }
 }
+

@@ -23,7 +23,7 @@ class UserModel {
       name: data?['name'] ?? 'Unknown',
       phoneNumber: data?['phoneNumber'] ?? 'No phone number',
       email: data?['email'] ?? 'No email',
-      createdAt: data?['createdAt'],
+      createdAt: data?['createdAt']
     );
   }
 
@@ -33,7 +33,7 @@ class UserModel {
       name: user.displayName ?? 'Unknown',
       phoneNumber: user.phoneNumber ?? 'No phone number',
       email: user.email ?? 'No email',
-      createdAt: Timestamp.now(), // Assuming the creation date is now
+      createdAt: Timestamp.now(),
     );
   }
 }
@@ -74,6 +74,58 @@ class UserDatabaseService {
     } catch (e) {
       print('Error retrieving user data: $e');
       throw Exception('Failed to retrieve user data');
+    }
+  }
+
+  Future<void> setTeamId(String teamId) async {
+    try {
+      await _userCollection.doc(uid).set({
+        'teamId': teamId,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('Error setting teamId: $e');
+      throw Exception('Failed to set teamId');
+    }
+  }
+
+  Future<String?> getTeamId() async {
+    try {
+      final docSnapshot = await _userCollection.doc(uid).get();
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data() as Map<String, dynamic>;
+        return data['teamId'];
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error getting teamId: $e');
+      throw Exception('Failed to get teamId');
+    }
+  }
+
+  Future<void> setAppId(String appId) async {
+    try {
+      await _userCollection.doc(uid).set({
+        'appId': appId,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('Error setting appId: $e');
+      throw Exception('Failed to set appId');
+    }
+  }
+
+  Future<String?> getAppId() async {
+    try {
+      final docSnapshot = await _userCollection.doc(uid).get();
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data() as Map<String, dynamic>;
+        return data['appId'];
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error getting appId: $e');
+      throw Exception('Failed to get appId');
     }
   }
 
