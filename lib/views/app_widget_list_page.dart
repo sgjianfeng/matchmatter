@@ -51,10 +51,25 @@ class _AppWidgetListPageState extends State<AppWidgetListPage> {
                   .map((rolePerm) => rolePerm.roleId)
                   .toList();
 
-              return ListTile(
-                title: Text(widgetDef.title),
-                subtitle: Text('Roles: ${roles.join(', ')}\nDescription: ${widgetDef.description}'),
-                onTap: () => widget.onWidgetSelected(widgetDef),
+              return Card(
+                margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: ListTile(
+                  contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  title: Text(
+                    widgetDef.title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  subtitle: Text(
+                    'Roles: ${roles.join(', ')}\nDescription: ${widgetDef.description}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  trailing: Icon(Icons.arrow_forward),
+                  onTap: () => widget.onWidgetSelected(widgetDef),
+                ),
               );
             },
           );

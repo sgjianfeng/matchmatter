@@ -47,7 +47,7 @@ class AppsList extends StatelessWidget {
                 ),
                 subtitle: Text(
                   app.description ?? 'No description available',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
             ),

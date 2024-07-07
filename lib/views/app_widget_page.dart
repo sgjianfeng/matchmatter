@@ -34,10 +34,6 @@ class AppWidgetPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                appWidget.title,
-                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
-              ),
-              Text(
                 '${app.name}\nRoles: ${roles.join(', ')}',
                 style: TextStyle(fontSize: 16.0, color: Colors.grey),
               ),

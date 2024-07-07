@@ -32,6 +32,7 @@ class _AppsPageState extends State<AppsPage> {
   Set<String> selectedRoles = {};
   AppModel? selectedApp; // 新增变量，用于保存选中的应用
   AppWidget? selectedWidget; // 新增变量，用于保存选中的部件
+  GlobalKey _menuKey = GlobalKey(); // 添加 GlobalKey
 
   @override
   void initState() {
@@ -149,16 +150,16 @@ class _AppsPageState extends State<AppsPage> {
   }
 
   void _showCustomMenu(BuildContext context) async {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderBox renderBox = _menuKey.currentContext?.findRenderObject() as RenderBox;
+    final offset = renderBox.localToGlobal(Offset.zero);
 
     await showMenu<String>(
       context: context,
-      position: RelativeRect.fromRect(
-        Rect.fromPoints(
-          overlay.localToGlobal(Offset.zero),
-          overlay.localToGlobal(overlay.size.bottomRight(Offset.zero)),
-        ),
-        Offset.zero & overlay.size,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy + renderBox.size.height,
+        offset.dx + renderBox.size.width,
+        offset.dy + renderBox.size.height * 2,
       ),
       items: [
         ...roles.map((role) {
@@ -237,6 +238,7 @@ class _AppsPageState extends State<AppsPage> {
         onGroupIconPressed: () {
           _showCustomMenu(context);
         },
+        menuKey: _menuKey, // 将 GlobalKey 传递给 CustomAppBarForApps
       ),
       body: Column(
         children: [

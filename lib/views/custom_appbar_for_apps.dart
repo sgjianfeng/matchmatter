@@ -6,6 +6,7 @@ class CustomAppBarForApps extends StatelessWidget implements PreferredSizeWidget
   final VoidCallback? onBackButtonPressed;
   final VoidCallback? onSearchIconPressed;
   final VoidCallback? onGroupIconPressed;
+  final GlobalKey? menuKey; // 新增 GlobalKey 参数
 
   CustomAppBarForApps({
     required this.title,
@@ -13,6 +14,7 @@ class CustomAppBarForApps extends StatelessWidget implements PreferredSizeWidget
     this.onBackButtonPressed,
     this.onSearchIconPressed,
     this.onGroupIconPressed,
+    this.menuKey, // 初始化 GlobalKey
   });
 
   @override
@@ -39,6 +41,7 @@ class CustomAppBarForApps extends StatelessWidget implements PreferredSizeWidget
           onPressed: onSearchIconPressed,
         ),
         IconButton(
+          key: menuKey, // 将 GlobalKey 赋值给 IconButton
           icon: const Icon(Icons.group),
           onPressed: onGroupIconPressed,
         ),
