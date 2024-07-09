@@ -23,7 +23,7 @@ class UserModel {
       name: data?['name'] ?? 'Unknown',
       phoneNumber: data?['phoneNumber'] ?? 'No phone number',
       email: data?['email'] ?? 'No email',
-      createdAt: data?['createdAt']
+      createdAt: data?['createdAt'],
     );
   }
 
@@ -129,6 +129,32 @@ class UserDatabaseService {
     }
   }
 
+  Future<void> setServiceId(String serviceId) async {
+    try {
+      await _userCollection.doc(uid).set({
+        'serviceId': serviceId,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('Error setting serviceId: $e');
+      throw Exception('Failed to set serviceId');
+    }
+  }
+
+  Future<String?> getServiceId() async {
+    try {
+      final docSnapshot = await _userCollection.doc(uid).get();
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data() as Map<String, dynamic>;
+        return data['serviceId'];
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error getting serviceId: $e');
+      throw Exception('Failed to get serviceId');
+    }
+  }
+
   UserModel _getFallbackUserData() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -176,7 +202,7 @@ class UserDatabaseService {
           // Return true indicating admin was created
           return true;
         } else {
-          print('Default admin user already exists.');
+          print('Default admin user already exists。');
           return false;
         }
       } catch (e) {
@@ -184,7 +210,7 @@ class UserDatabaseService {
         return false;
       }
     } else {
-      print('No user logged in, skipping admin initialization.');
+      print('No user logged in, skipping admin initialization。');
       return false;
     }
   }
@@ -195,6 +221,92 @@ class UserDatabaseService {
       return user.uid;
     } else {
       throw Exception('No user is currently logged in');
+    }
+  }
+
+  // Function to get user roles in a team
+  static Future<List<String>> getUserRolesInTeam(String teamId, String userId) async {
+    try {
+      // Get the team document
+      DocumentSnapshot teamSnapshot = await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
+      if (!teamSnapshot.exists) {
+        throw Exception('Team does not exist');
+      }
+
+      // Get the roles data
+      Map<String, dynamic> teamData = teamSnapshot.data() as Map<String, dynamic>;
+      Map<String, List<dynamic>> roles = Map<String, List<dynamic>>.from(teamData['roles']);
+
+      // Find user roles
+      List<String> userRoles = [];
+      roles.forEach((role, userIds) {
+        if (userIds.contains(userId)) {
+          userRoles.add(role);
+        }
+      });
+
+      return userRoles;
+    } catch (e) {
+      print('Error getting user roles in team: $e');
+      throw Exception('Failed to get user roles in team');
+    }
+  }
+
+  // Function to get user apps in a team
+  static Future<Map<String, List<String>>> getUserAppsInTeam(String teamId, String userId) async {
+    try {
+      List<String> userRoles = await getUserRolesInTeam(teamId, userId);
+      Map<String, List<String>> roleApps = {};
+
+      for (String roleId in userRoles) {
+        QuerySnapshot rolePermissionsSnapshot = await FirebaseFirestore.instance
+            .collection('rolePermissions')
+            .where('teamId', isEqualTo: teamId)
+            .where('roleId', isEqualTo: roleId)
+            .get();
+
+        for (var doc in rolePermissionsSnapshot.docs) {
+          String appId = doc['appId'];
+          if (!roleApps.containsKey(roleId)) {
+            roleApps[roleId] = [];
+          }
+          roleApps[roleId]!.add(appId);
+        }
+      }
+
+      return roleApps;
+    } catch (e) {
+      print('Error getting user apps in team: $e');
+      throw Exception('Failed to get user apps in team');
+    }
+  }
+
+  // Function to get user services in a team
+  static Future<Map<String, List<String>>> getUserServicesInTeam(String teamId, String userId) async {
+    try {
+      List<String> userRoles = await getUserRolesInTeam(teamId, userId);
+      Map<String, List<String>> roleServices = {};
+
+      for (String roleId in userRoles) {
+        QuerySnapshot roleServicesSnapshot = await FirebaseFirestore.instance
+            .collection('roleservicepermissions')
+            .where('teamId', isEqualTo: teamId)
+            .where('roleId', isEqualTo: roleId)
+            .get();
+
+        for (var doc in roleServicesSnapshot.docs) {
+          String serviceId = doc['serviceId'];
+          if (!roleServices.containsKey(roleId)) {
+            roleServices[roleId] = [];
+          }
+          roleServices[roleId]!.add(serviceId);
+        }
+      }
+
+      return roleServices;
+    } catch (e) {
+      print('Error getting user services in team: $e');
+      throw Exception('Failed to get user services in team');
     }
   }
 }

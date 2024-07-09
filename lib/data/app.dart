@@ -332,20 +332,15 @@ class AppModel {
     });
 
     for (String role in userRoles) {
-      DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance
+      QuerySnapshot rolePermissionsSnapshot = await FirebaseFirestore.instance
           .collection('rolePermissions')
-          .doc(teamId)
+          .where('teamId', isEqualTo: teamId)
+          .where('roleId', isEqualTo: role)
+          .where('appId', isEqualTo: appId)
+          .where('permissionId', isEqualTo: 'appadmins')
           .get();
-      if (roleSnapshot.exists) {
-        Map<String, dynamic> rolePermissionsData =
-            roleSnapshot.data() as Map<String, dynamic>;
-        if (rolePermissionsData.containsKey(appId)) {
-          List<dynamic> permissionsList = rolePermissionsData[appId];
-          if (permissionsList.any((perm) =>
-              perm['permissionId'] == 'appadmins' && perm['roleId'] == role)) {
-            return true;
-          }
-        }
+      if (rolePermissionsSnapshot.docs.isNotEmpty) {
+        return true;
       }
     }
 
@@ -445,8 +440,9 @@ Future<void> addPermissionToRole(
     return;
   }
 
-  final rolePermissionsDoc =
-      FirebaseFirestore.instance.collection('rolePermissions').doc(role.teamId);
+  final rolePermissionsDoc = FirebaseFirestore.instance
+      .collection('rolePermissions')
+      .doc('${role.teamId}-${role.id}-${permission.appId}-${permission.id}');
   final rolePermissionsSnapshot = await rolePermissionsDoc.get();
 
   Map<String, dynamic> rolePermissions = {};
@@ -455,27 +451,17 @@ Future<void> addPermissionToRole(
         Map<String, dynamic>.from(rolePermissionsSnapshot.data()!);
   }
 
-  if (!rolePermissions.containsKey(permission.appId)) {
-    rolePermissions[permission.appId] = [];
-  }
-  List<Map<String, dynamic>> permissionsList =
-      List<Map<String, dynamic>>.from(rolePermissions[permission.appId]);
-
-  bool permissionExists = permissionsList.any((perm) =>
-      perm['permissionId'] == permission.id && perm['roleId'] == role.id);
-
-  if (!permissionExists) {
-    permissionsList.add({
-      'permissionId': permission.id,
-      'roleId': role.id,
-      'approverId': approveModel.approverId,
-      'approverRoleTeamId': approveModel.approverRole.teamId,
-      'approverRoleId': approveModel.approverRole.id,
-      'status': approveModel.status.toMap(),
-      'joinedAt': Timestamp.now(),
-    });
-    rolePermissions[permission.appId] = permissionsList;
-  }
+  rolePermissions = {
+    'teamId': role.teamId,
+    'appId': permission.appId,
+    'roleId': role.id,
+    'permissionId': permission.id,
+    'approverId': approveModel.approverId,
+    'approverRoleTeamId': approveModel.approverRole.teamId,
+    'approverRoleId': approveModel.approverRole.id,
+    'status': approveModel.status.toMap(),
+    'joinedAt': Timestamp.now(),
+  };
 
   await rolePermissionsDoc.set(rolePermissions);
 }
@@ -505,27 +491,21 @@ Future<List<RolePermissions>> getUserRolePermissions(
 
     List<RolePermissions> rolesPermissions = [];
 
-    DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance
+    QuerySnapshot rolePermissionsSnapshot = await FirebaseFirestore.instance
         .collection('rolePermissions')
-        .doc(teamId)
+        .where('teamId', isEqualTo: teamId)
         .get();
-    if (roleSnapshot.exists) {
-      Map<String, dynamic> rolePermissionsData =
-          roleSnapshot.data() as Map<String, dynamic>;
-      rolePermissionsData.forEach((appId, permissionsList) {
-        if (permissionsList is List) {
-          for (var perm in permissionsList) {
-            if (userRoles.contains(perm['roleId'])) {
-              rolesPermissions.add(RolePermissions(
-                roleId: perm['roleId'],
-                teamId: teamId,
-                appId: appId,
-                permissionId: perm['permissionId'],
-              ));
-            }
-          }
+    if (rolePermissionsSnapshot.docs.isNotEmpty) {
+      for (var doc in rolePermissionsSnapshot.docs) {
+        if (userRoles.contains(doc['roleId'])) {
+          rolesPermissions.add(RolePermissions(
+            roleId: doc['roleId'],
+            teamId: teamId,
+            appId: doc['appId'],
+            permissionId: doc['permissionId'],
+          ));
         }
-      });
+      }
     }
 
     print('Roles permissions: $rolesPermissions');

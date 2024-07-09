@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:matchmatter/apps/matchmatterapp/match_matter_app.dart';
-import 'package:matchmatter/apps/myteamapp/my_team_app.dart';
-import 'package:matchmatter/data/app.dart';
+import 'package:matchmatter/data/service.dart';
 import 'package:matchmatter/data/user.dart';
+import 'package:matchmatter/services/matchmatterservice/match_matter_service.dart';
+import 'package:matchmatter/services/myteamservice/myteam_service.dart';
 
+// Class for RoleModel
 class RoleModel {
   final String id;
   final String? description;
@@ -46,6 +47,7 @@ class RoleModel {
   }
 }
 
+// Class for Team
 class Team {
   final String id;
   final String name;
@@ -100,21 +102,7 @@ class Team {
     await _addRoleAdmin(creatorId, 'admins');
     await _addRoleAdmin(creatorId, 'members');
 
-    MyTeamApp app = await MyTeamApp.createOrGet(
-      creator: creatorId,
-      ownerTeamId: id,
-    );
-
-    await _assignPermissions(app, creatorId);
-
-    if (id == 'matchmatterteam') {
-      MatchMatterApp app = await MatchMatterApp.createOrGet(
-        creator: creatorId,
-        ownerTeamId: id,
-      );
-
-      await _assignPermissions(app, creatorId);
-    }
+    await _createAndAssignServicePermissions(creatorId);
   }
 
   void _ensureUniqueUsersInRoles() {
@@ -151,47 +139,86 @@ class Team {
     });
   }
 
-  Future<void> _assignPermissions(AppModel app, String? creatorId) async {
-    for (String role in roles.keys) {
-      List<String> userIds = roles[role]!;
-      if (userIds.isNotEmpty) {
-        creatorId = creatorId ?? userIds.first;
+  Future<void> _createAndAssignServicePermissions(String creatorId) async {
+    // Create MyTeamService for the team
+    MyTeamService myTeamService = MyTeamService(
+      ownerTeamId: id,
+      creatorId: creatorId,
+      description: 'Default service for team $name',
+    );
 
-        if (role == 'admins') {
-          await _assignPermissionToRole(app, 'appadmins', role, creatorId);
-        } else if (role == 'members') {
-          await _assignPermissionToRole(app, 'appusers', role, creatorId);
-        }
+    bool canCreateMyTeamService = await Service.canCreateService(
+      id: myTeamService.id,
+      ownerTeamId: myTeamService.ownerTeamId,
+      ownerTeamScope: myTeamService.ownerTeamScope,
+    );
+
+    if (canCreateMyTeamService) {
+      await myTeamService.saveToFirestore();
+
+      // Assign serviceadmins permission to admins role
+      await addRolePermissions(
+        teamId: id,
+        roleId: 'admins',
+        serviceId: myTeamService.id,
+        permissionId: 'serviceadmins',
+        approverId: creatorId,
+        status: {'permissionRole': true},
+      );
+
+      // Assign serviceusers permission to members role
+      await addRolePermissions(
+        teamId: id,
+        roleId: 'members',
+        serviceId: myTeamService.id,
+        permissionId: 'serviceusers',
+        approverId: creatorId,
+        status: {'permissionRole': true},
+      );
+    } else {
+      throw Exception('MyTeamService creation failed. Please check the constraints.');
+    }
+
+    // Create MatchMatterService if team ID is matchmatterteam
+    if (id == 'matchmatterteam') {
+      MatchMatterService matchMatterService = MatchMatterService(
+        ownerTeamId: id,
+        creatorId: creatorId,
+        description: 'Default service for matchmatter team',
+      );
+
+      bool canCreateMatchMatterService = await Service.canCreateService(
+        id: matchMatterService.id,
+        ownerTeamId: matchMatterService.ownerTeamId,
+        ownerTeamScope: matchMatterService.ownerTeamScope,
+      );
+
+      if (canCreateMatchMatterService) {
+        await matchMatterService.saveToFirestore();
+
+        // Assign serviceadmins permission to admins role
+        await addRolePermissions(
+          teamId: id,
+          roleId: 'admins',
+          serviceId: matchMatterService.id,
+          permissionId: 'serviceadmins',
+          approverId: creatorId,
+          status: {'permissionRole': true},
+        );
+
+        // Assign serviceusers permission to members role
+        await addRolePermissions(
+          teamId: id,
+          roleId: 'members',
+          serviceId: matchMatterService.id,
+          permissionId: 'serviceusers',
+          approverId: creatorId,
+          status: {'permissionRole': true},
+        );
+      } else {
+        throw Exception('MatchMatterService creation failed. Please check the constraints.');
       }
     }
-  }
-
-  Future<void> _assignPermissionToRole(AppModel app, String permissionId, String roleName, String creatorId) async {
-    Permission permission = app.permissions.firstWhere((perm) => perm.id == permissionId);
-
-    RoleModel role = RoleModel(
-      id: roleName,
-      name: roleName,
-      teamId: id,
-      creatorId: creatorId,
-      data: {},
-    );
-
-    await addPermissionToRole(
-      permission,
-      role,
-      (
-        {required Permission permission,
-        required RoleModel role,
-        String? userId}) async {
-        return ApproveModel(
-          approverId: creatorId,
-          approverRole: role,
-          status: Status(permissionRole: true),
-          data: {},
-        );
-      },
-    );
   }
 
   Future<void> _addRoleAdmin(String userId, String roleId) async {
