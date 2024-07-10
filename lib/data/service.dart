@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:matchmatter/data/user.dart';
+import 'package:matchmatter/data/action.dart';
 
 // Enums for different scopes
 enum OwnerTeamScope { sole, approved, all }
@@ -19,7 +20,7 @@ class Service {
   final List<String> tags; // tags of string
   final List<String> approvedOwnerTeamIds; // approved owner team IDs for approved scope
   final List<Permission> permissions; // service permission model list
-  final List<ServiceWidget> widgets; // service widget model list
+  final List<Action> actions; // service action model list
   final Map<String, dynamic> data;
 
   Service({
@@ -35,7 +36,7 @@ class Service {
     required this.tags,
     this.approvedOwnerTeamIds = const [],
     required this.permissions,
-    required this.widgets,
+    required this.actions,
     required this.data,
   }) : name = name ?? id;
 
@@ -60,8 +61,8 @@ class Service {
       permissions: (data['permissions'] as List<dynamic>)
           .map((e) => Permission.fromMap(e as Map<String, dynamic>))
           .toList(),
-      widgets: (data['widgets'] as List<dynamic>)
-          .map((e) => ServiceWidget.fromMap(e as Map<String, dynamic>))
+      actions: (data['actions'] as List<dynamic>)
+          .map((e) => Action.fromMap(e as Map<String, dynamic>))
           .toList(),
       data: data['data'],
     );
@@ -81,7 +82,7 @@ class Service {
       'tags': tags,
       'approvedOwnerTeamIds': approvedOwnerTeamIds,
       'permissions': permissions.map((e) => e.toMap()).toList(),
-      'widgets': widgets.map((e) => e.toMap()).toList(),
+      'actions': actions.map((e) => e.toMap()).toList(),
       'data': data,
     };
   }
@@ -133,7 +134,6 @@ class Service {
     return querySnapshot.docs.map((doc) => Service.fromFirestore(doc)).toList();
   }
 }
-
 
 // Class for Permission
 class Permission {
@@ -201,51 +201,6 @@ final Permission serviceUsersPermission = Permission(
   tags: [],
   data: {},
 );
-
-// Class for ServiceWidget
-class ServiceWidget {
-  final String id; // unique id in service
-  final String name;
-  final String title;
-  final String description;
-  final List<String> permissions; // permission ids to allow access
-  final List<String> tags; // tags of string
-  final Map<String, dynamic> data;
-
-  ServiceWidget({
-    required this.id,
-    String? name,
-    required this.title,
-    required this.description,
-    required this.permissions,
-    required this.tags,
-    required this.data,
-  }) : name = name ?? id;
-
-  factory ServiceWidget.fromMap(Map<String, dynamic> data) {
-    return ServiceWidget(
-      id: data['id'],
-      name: data['name'],
-      title: data['title'],
-      description: data['description'],
-      permissions: List<String>.from(data['permissions']),
-      tags: List<String>.from(data['tags']),
-      data: data['data'],
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'title': title,
-      'description': description,
-      'permissions': permissions,
-      'tags': tags,
-      'data': data,
-    };
-  }
-}
 
 // Function to add default permissions to a service
 Future<void> addDefaultPermissions(Service service) async {
@@ -334,15 +289,15 @@ Future<Map<String, List<Permission>>> getUserPermissionsInService({
   }
 }
 
-// 获取用户在服务中的小部件
-Future<Map<String, List<ServiceWidget>>> getUserWidgetsInService({
+// 获取用户在服务中的操作
+Future<Map<String, List<Action>>> getUserActionsInService({
   required String userId,
   required String teamId,
   required String serviceId,
 }) async {
   try {
     List<String> userRoles = await UserDatabaseService.getUserRolesInTeam(teamId, userId);
-    Map<String, List<ServiceWidget>> roleWidgets = {};
+    Map<String, List<Action>> roleActions = {};
 
     for (String roleId in userRoles) {
       QuerySnapshot rolePermissionsSnapshot = await FirebaseFirestore.instance
@@ -355,16 +310,16 @@ Future<Map<String, List<ServiceWidget>>> getUserWidgetsInService({
       for (var doc in rolePermissionsSnapshot.docs) {
         String permissionId = doc['permissionId'];
 
-        // 获取服务中的小部件
+        // 获取服务中的操作
         Service? service = await Service.getServiceData(serviceId);
         if (service != null) {
-          for (var widget in service.widgets) {
-            if (widget.permissions.contains(permissionId)) {
-              if (!roleWidgets.containsKey(roleId)) {
-                roleWidgets[roleId] = [];
+          for (var action in service.actions) {
+            if (action.permissions.contains(permissionId)) {
+              if (!roleActions.containsKey(roleId)) {
+                roleActions[roleId] = [];
               }
-              if (!roleWidgets[roleId]!.contains(widget)) {
-                roleWidgets[roleId]!.add(widget);
+              if (!roleActions[roleId]!.contains(action)) {
+                roleActions[roleId]!.add(action);
               }
             }
           }
@@ -372,42 +327,9 @@ Future<Map<String, List<ServiceWidget>>> getUserWidgetsInService({
       }
     }
 
-    return roleWidgets;
+    return roleActions;
   } catch (e) {
-    print('Error getting user widgets in service: $e');
-    throw Exception('Failed to get user widgets in service');
+    print('Error getting user actions in service: $e');
+    throw Exception('Failed to get user actions in service');
   }
 }
-
-
-// Example of creating a new service and saving it to Firestore
-// Future<void> createNewService() async {
-//   Service newService = Service(
-//     id: 'service1',
-//     ownerTeamScope: OwnerTeamScope.sole,
-//     ownerTeamId: 'ownerTeam1',
-//     creatorId: 'creator1',
-//     createdAt: Timestamp.now(),
-//     description: 'This is a new service',
-//     tags: ['tag1', 'tag2'],
-//     permissions: [],
-//     widgets: [],
-//     data: {},
-//   );
-
-//   await newService.saveToFirestore();
-//   await addDefaultPermissions(newService);
-// }
-
-// // Example usage
-// Future<void> main() async {
-//   await createNewService();
-//   await addRolePermissions(
-//     teamId: 'team1',
-//     roleId: 'role1',
-//     serviceId: 'service1',
-//     permissionId: 'serviceusers',
-//     approverId: 'approver1',
-//     status: {'active': true},
-//   );
-// }

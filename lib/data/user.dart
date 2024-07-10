@@ -103,32 +103,6 @@ class UserDatabaseService {
     }
   }
 
-  Future<void> setAppId(String appId) async {
-    try {
-      await _userCollection.doc(uid).set({
-        'appId': appId,
-      }, SetOptions(merge: true));
-    } catch (e) {
-      print('Error setting appId: $e');
-      throw Exception('Failed to set appId');
-    }
-  }
-
-  Future<String?> getAppId() async {
-    try {
-      final docSnapshot = await _userCollection.doc(uid).get();
-      if (docSnapshot.exists) {
-        final data = docSnapshot.data() as Map<String, dynamic>;
-        return data['appId'];
-      } else {
-        return null;
-      }
-    } catch (e) {
-      print('Error getting appId: $e');
-      throw Exception('Failed to get appId');
-    }
-  }
-
   Future<void> setServiceId(String serviceId) async {
     try {
       await _userCollection.doc(uid).set({
@@ -249,35 +223,6 @@ class UserDatabaseService {
     } catch (e) {
       print('Error getting user roles in team: $e');
       throw Exception('Failed to get user roles in team');
-    }
-  }
-
-  // Function to get user apps in a team
-  static Future<Map<String, List<String>>> getUserAppsInTeam(String teamId, String userId) async {
-    try {
-      List<String> userRoles = await getUserRolesInTeam(teamId, userId);
-      Map<String, List<String>> roleApps = {};
-
-      for (String roleId in userRoles) {
-        QuerySnapshot rolePermissionsSnapshot = await FirebaseFirestore.instance
-            .collection('rolePermissions')
-            .where('teamId', isEqualTo: teamId)
-            .where('roleId', isEqualTo: roleId)
-            .get();
-
-        for (var doc in rolePermissionsSnapshot.docs) {
-          String appId = doc['appId'];
-          if (!roleApps.containsKey(roleId)) {
-            roleApps[roleId] = [];
-          }
-          roleApps[roleId]!.add(appId);
-        }
-      }
-
-      return roleApps;
-    } catch (e) {
-      print('Error getting user apps in team: $e');
-      throw Exception('Failed to get user apps in team');
     }
   }
 

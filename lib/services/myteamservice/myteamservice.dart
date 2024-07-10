@@ -1,35 +1,30 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:matchmatter/data/action.dart';
 import 'package:matchmatter/data/service.dart';
 
-
-// Class for MatchMatterService
-class MatchMatterService extends Service {
-  MatchMatterService({
-    String id = 'matchmatterservice',
-    String name = 'MatchMatterService',
+class MyTeamService extends Service {
+  MyTeamService({
+    String id = 'myteamservice',
+    String name= 'MyTeamService',
     required String ownerTeamId,
     required String creatorId,
-    String description = 'This is MatchMatterService',
+    required String description,
     List<String> tags = const [],
     Map<String, dynamic> data = const {},
   }) : super(
           id: id,
           type: 'service',
           status: 'active',
-          ownerTeamScope: OwnerTeamScope.sole,
+          ownerTeamScope: OwnerTeamScope.all,
           ownerTeamId: ownerTeamId,
           creatorId: creatorId,
           createdAt: Timestamp.now(),
           description: description,
           tags: tags,
           permissions: _defaultPermissions,
-          widgets: [],
+          actions: _defaultActions,
           data: data,
-        ) {
-    if (ownerTeamId != 'matchmatterteam') {
-      throw Exception('Service can only be created for the team matchmatterteam');
-    }
-  }
+        );
 
   static final List<Permission> _defaultPermissions = [
     Permission(
@@ -47,6 +42,27 @@ class MatchMatterService extends Service {
       description: 'Default permission for service users',
       teamScope: PermissionTeamScope.all,
       approvedTeamIds: [],
+      tags: [],
+      data: {},
+    ),
+  ];
+
+  static final List<Action> _defaultActions = [
+    Action(
+      id: 'myroles',
+      name: 'myroles',
+      title: 'My Roles',
+      description: 'My roles in team',
+      permissions: ['serviceusers'],
+      tags: [],
+      data: {},
+    ),
+    Action(
+      id: 'teamroles',
+      name: 'teamroles',
+      title: 'Team Roles',
+      description: 'Manage team roles',
+      permissions: ['serviceadmins'],
       tags: [],
       data: {},
     ),

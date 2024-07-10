@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class CustomAppBarForApps extends StatelessWidget implements PreferredSizeWidget {
+class ServicesAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final bool showBackButton;
   final VoidCallback? onBackButtonPressed;
@@ -8,7 +8,7 @@ class CustomAppBarForApps extends StatelessWidget implements PreferredSizeWidget
   final VoidCallback? onGroupIconPressed;
   final GlobalKey? menuKey; // 新增 GlobalKey 参数
 
-  CustomAppBarForApps({
+  ServicesAppBar({
     required this.title,
     this.showBackButton = false,
     this.onBackButtonPressed,

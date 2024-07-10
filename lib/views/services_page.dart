@@ -1,37 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:matchmatter/data/app.dart';
+import 'package:matchmatter/data/service.dart';
 import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
-import 'package:matchmatter/views/app_widget_page.dart';
-import 'package:matchmatter/views/apps_list.dart';
-import 'package:matchmatter/views/app_widget_list_page.dart'; // Import AppWidgetListPage
-import 'package:matchmatter/views/custom_appbar_for_apps.dart';
+import 'package:matchmatter/data/action.dart' as mm;
+import 'package:matchmatter/views/service_action_page.dart';
+import 'package:matchmatter/views/services_list.dart';
+import 'package:matchmatter/views/service_action_list_page.dart'; // Import ServiceActionListPage
+import 'package:matchmatter/views/services_appbar.dart';
 import 'package:matchmatter/views/roles_list.dart';
 
-class AppsPage extends StatefulWidget {
+class ServicesPage extends StatefulWidget {
   final String teamId;
   final UserModel? user;
 
-  const AppsPage({super.key, required this.teamId, this.user});
+  const ServicesPage({super.key, required this.teamId, this.user});
 
   @override
-  _AppsPageState createState() => _AppsPageState();
+  _ServicesPageState createState() => _ServicesPageState();
 }
 
-class _AppsPageState extends State<AppsPage> {
+class _ServicesPageState extends State<ServicesPage> {
   String searchQuery = '';
   bool showRoles = false;
   bool showSearchBar = false;
-  List<AppModel> apps = [];
+  List<Service> services = [];
   List<RoleModel> roles = [];
-  List<RolePermissions> rolesPermissions = [];
   bool isLoading = true;
   late UserModel currentUser;
   Set<String> selectedRoles = {};
-  AppModel? selectedApp; // 新增变量，用于保存选中的应用
-  AppWidget? selectedWidget; // 新增变量，用于保存选中的部件
+  Service? selectedService; // 新增变量，用于保存选中的服务
+  mm.Action? selectedAction; // 新增变量，用于保存选中的操作
   GlobalKey _menuKey = GlobalKey(); // 添加 GlobalKey
 
   @override
@@ -69,12 +69,14 @@ class _AppsPageState extends State<AppsPage> {
 
   Future<void> _fetchData() async {
     try {
-      rolesPermissions = await getUserRolePermissions(widget.teamId, currentUser.uid);
-      final apps = await _mapAppPermissions(rolesPermissions);
-      final roles = _mapRolePermissions(rolesPermissions);
+      final userRoles = await UserDatabaseService.getUserRolesInTeam(widget.teamId, currentUser.uid);
+      final userServices = await UserDatabaseService.getUserServicesInTeam(widget.teamId, currentUser.uid);
+
+      final services = await _mapUserServices(userServices);
+      final roles = _mapUserRoles(userRoles);
 
       setState(() {
-        this.apps = apps;
+        this.services = services;
         this.roles = roles;
         selectedRoles.addAll(roles.map((role) => role.id));
         isLoading = false;
@@ -90,23 +92,22 @@ class _AppsPageState extends State<AppsPage> {
     }
   }
 
-  Future<List<AppModel>> _mapAppPermissions(List<RolePermissions> rolesPermissions) async {
-    Set<String> appIds = rolesPermissions.map((rolePerm) => rolePerm.appId).toSet();
-    List<AppModel> apps = [];
+  Future<List<Service>> _mapUserServices(Map<String, List<String>> userServices) async {
+    Set<String> serviceIds = userServices.values.expand((ids) => ids).toSet();
+    List<Service> services = [];
 
-    for (String appId in appIds) {
-      AppModel? app = await AppModel.getAppData(appId, widget.teamId);
-      if (app != null) {
-        apps.add(app);
+    for (String serviceId in serviceIds) {
+      Service? service = await Service.getServiceData(serviceId);
+      if (service != null) {
+        services.add(service);
       }
     }
 
-    return apps;
+    return services;
   }
 
-  List<RoleModel> _mapRolePermissions(List<RolePermissions> rolesPermissions) {
-    Set<String> roleIds = rolesPermissions.map((rolePerm) => rolePerm.roleId).toSet();
-    return roleIds.map((roleId) {
+  List<RoleModel> _mapUserRoles(List<String> userRoles) {
+    return userRoles.map((roleId) {
       return RoleModel(
         id: roleId,
         name: roleId,
@@ -123,29 +124,30 @@ class _AppsPageState extends State<AppsPage> {
       } else {
         selectedRoles.add(roleId);
       }
-      _updateAppsForSelectedRoles();
+      _updateServicesForSelectedRoles();
     });
   }
 
-  Future<void> _updateAppsForSelectedRoles() async {
+  Future<void> _updateServicesForSelectedRoles() async {
     if (selectedRoles.isEmpty) {
       setState(() {
-        apps = [];
+        services = [];
       });
       return;
     }
 
-    Set<String> selectedAppIds = rolesPermissions
-        .where((rolePerm) => selectedRoles.contains(rolePerm.roleId))
-        .map((rolePerm) => rolePerm.appId)
+    final userServices = await UserDatabaseService.getUserServicesInTeam(widget.teamId, currentUser.uid);
+    Set<String> selectedServiceIds = userServices.entries
+        .where((entry) => selectedRoles.contains(entry.key))
+        .expand((entry) => entry.value)
         .toSet();
 
-    List<AppModel?> updatedApps = await Future.wait(
-      selectedAppIds.map((appId) => AppModel.getAppData(appId, widget.teamId)),
+    List<Service?> updatedServices = await Future.wait(
+      selectedServiceIds.map((serviceId) => Service.getServiceData(serviceId)),
     );
 
     setState(() {
-      apps = updatedApps.whereType<AppModel>().toList(); // Filter out null values
+      services = updatedServices.whereType<Service>().toList(); // Filter out null values
     });
   }
 
@@ -196,25 +198,25 @@ class _AppsPageState extends State<AppsPage> {
     );
   }
 
-  void _onAppSelected(AppModel app) {
+  void _onServiceSelected(Service service) {
     setState(() {
-      selectedApp = app;
-      selectedWidget = null; // Reset selectedWidget when a new app is selected
+      selectedService = service;
+      selectedAction = null; // Reset selectedAction when a new service is selected
     });
   }
 
-  void _onWidgetSelected(AppWidget widget) {
+  void _onActionSelected(mm.Action action) {
     setState(() {
-      selectedWidget = widget;
+      selectedAction = action;
     });
   }
 
   void _onBackToList() {
     setState(() {
-      if (selectedWidget != null) {
-        selectedWidget = null;
+      if (selectedAction != null) {
+        selectedAction = null;
       } else {
-        selectedApp = null;
+        selectedService = null;
       }
     });
   }
@@ -222,13 +224,13 @@ class _AppsPageState extends State<AppsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBarForApps(
-        title: selectedWidget != null
-            ? selectedWidget!.title
-            : selectedApp != null
-                ? selectedApp!.name
+      appBar: ServicesAppBar(
+        title: selectedAction != null
+            ? selectedAction!.title
+            : selectedService != null
+                ? selectedService!.name
                 : '',
-        showBackButton: selectedApp != null,
+        showBackButton: selectedService != null,
         onBackButtonPressed: _onBackToList,
         onSearchIconPressed: () {
           setState(() {
@@ -238,7 +240,7 @@ class _AppsPageState extends State<AppsPage> {
         onGroupIconPressed: () {
           _showCustomMenu(context);
         },
-        menuKey: _menuKey, // 将 GlobalKey 传递给 CustomAppBarForApps
+        menuKey: _menuKey, // 将 GlobalKey 传递给 CustomAppBarForServices
       ),
       body: Column(
         children: [
@@ -247,13 +249,13 @@ class _AppsPageState extends State<AppsPage> {
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : selectedApp != null
-                    ? selectedWidget != null
-                        ? AppWidgetPage(app: selectedApp!, appWidget: selectedWidget!, teamId: widget.teamId, roles: selectedRoles.toList())
-                        : AppWidgetListPage(app: selectedApp!, teamId: widget.teamId, onWidgetSelected: _onWidgetSelected)
+                : selectedService != null
+                    ? selectedAction != null
+                        ? ServiceActionPage(service: selectedService!, action: selectedAction!, teamId: widget.teamId, roles: selectedRoles.toList())
+                        : ServiceActionListPage(service: selectedService!, teamId: widget.teamId, onActionSelected: _onActionSelected)
                     : showRoles
                         ? RolesList(roles: roles)
-                        : AppsList(apps: apps, searchQuery: searchQuery, onAppSelected: _onAppSelected),
+                        : ServicesList(services: services, searchQuery: searchQuery, onServiceSelected: _onServiceSelected),
           ),
         ],
       ),

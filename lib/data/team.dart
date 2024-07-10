@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:matchmatter/data/service.dart';
 import 'package:matchmatter/data/user.dart';
-import 'package:matchmatter/services/matchmatterservice/match_matter_service.dart';
-import 'package:matchmatter/services/myteamservice/myteam_service.dart';
+import 'package:matchmatter/services/matchmatterservice/matchmatterservice.dart';
+import 'package:matchmatter/services/myteamservice/myteamservice.dart';
 
 // Class for RoleModel
 class RoleModel {
@@ -102,7 +102,7 @@ class Team {
     await _addRoleAdmin(creatorId, 'admins');
     await _addRoleAdmin(creatorId, 'members');
 
-    await _createAndAssignServicePermissions(creatorId);
+    await _createDefaultServices(creatorId);
   }
 
   void _ensureUniqueUsersInRoles() {
@@ -139,86 +139,48 @@ class Team {
     });
   }
 
-  Future<void> _createAndAssignServicePermissions(String creatorId) async {
-    // Create MyTeamService for the team
+  Future<void> _createDefaultServices(String creatorId) async {
+    // 创建 MyTeamService
     MyTeamService myTeamService = MyTeamService(
       ownerTeamId: id,
       creatorId: creatorId,
-      description: 'Default service for team $name',
+      description: 'Default service for team management',
     );
+    await myTeamService.saveToFirestore();
+    await _assignServicePermissions(myTeamService);
 
-    bool canCreateMyTeamService = await Service.canCreateService(
-      id: myTeamService.id,
-      ownerTeamId: myTeamService.ownerTeamId,
-      ownerTeamScope: myTeamService.ownerTeamScope,
-    );
-
-    if (canCreateMyTeamService) {
-      await myTeamService.saveToFirestore();
-
-      // Assign serviceadmins permission to admins role
-      await addRolePermissions(
-        teamId: id,
-        roleId: 'admins',
-        serviceId: myTeamService.id,
-        permissionId: 'serviceadmins',
-        approverId: creatorId,
-        status: {'permissionRole': true},
-      );
-
-      // Assign serviceusers permission to members role
-      await addRolePermissions(
-        teamId: id,
-        roleId: 'members',
-        serviceId: myTeamService.id,
-        permissionId: 'serviceusers',
-        approverId: creatorId,
-        status: {'permissionRole': true},
-      );
-    } else {
-      throw Exception('MyTeamService creation failed. Please check the constraints.');
-    }
-
-    // Create MatchMatterService if team ID is matchmatterteam
+    // 如果 teamId 是 matchmatterteam，则创建 MatchMatterService
     if (id == 'matchmatterteam') {
       MatchMatterService matchMatterService = MatchMatterService(
         ownerTeamId: id,
         creatorId: creatorId,
-        description: 'Default service for matchmatter team',
+        description: 'Default service for MatchMatter team',
       );
-
-      bool canCreateMatchMatterService = await Service.canCreateService(
-        id: matchMatterService.id,
-        ownerTeamId: matchMatterService.ownerTeamId,
-        ownerTeamScope: matchMatterService.ownerTeamScope,
-      );
-
-      if (canCreateMatchMatterService) {
-        await matchMatterService.saveToFirestore();
-
-        // Assign serviceadmins permission to admins role
-        await addRolePermissions(
-          teamId: id,
-          roleId: 'admins',
-          serviceId: matchMatterService.id,
-          permissionId: 'serviceadmins',
-          approverId: creatorId,
-          status: {'permissionRole': true},
-        );
-
-        // Assign serviceusers permission to members role
-        await addRolePermissions(
-          teamId: id,
-          roleId: 'members',
-          serviceId: matchMatterService.id,
-          permissionId: 'serviceusers',
-          approverId: creatorId,
-          status: {'permissionRole': true},
-        );
-      } else {
-        throw Exception('MatchMatterService creation failed. Please check the constraints.');
-      }
+      await matchMatterService.saveToFirestore();
+      await _assignServicePermissions(matchMatterService);
     }
+  }
+
+  Future<void> _assignServicePermissions(Service service) async {
+    // Assign serviceadmins permission to admins role
+    await addRolePermissions(
+      teamId: id,
+      roleId: 'admins',
+      serviceId: service.id,
+      permissionId: 'serviceadmins',
+      approverId: service.creatorId,
+      status: {'permissionRole': true},
+    );
+
+    // Assign serviceusers permission to members role
+    await addRolePermissions(
+      teamId: id,
+      roleId: 'members',
+      serviceId: service.id,
+      permissionId: 'serviceusers',
+      approverId: service.creatorId,
+      status: {'permissionRole': true},
+    );
   }
 
   Future<void> _addRoleAdmin(String userId, String roleId) async {

@@ -4,7 +4,7 @@ import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
 import 'package:matchmatter/providers/bottom_navigation_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:matchmatter/views/apps_page.dart';
+import 'package:matchmatter/views/services_page.dart';
 import 'package:matchmatter/views/team_profile_page.dart';
 import 'package:matchmatter/views/team_messages_page.dart'; // Import the TeamMessagesPage
 
@@ -54,7 +54,7 @@ class _TeamPageState extends State<TeamPage> {
             tabs: [
               Tab(text: 'Messages'),
               Tab(text: 'Chats'),
-              Tab(text: 'Apps'),
+              Tab(text: 'Services'),
               Tab(text: 'Profile'),
             ],
           ),
@@ -71,7 +71,7 @@ class _TeamPageState extends State<TeamPage> {
                 children: [
                   const TeamMessagesPage(),  // Use the TeamMessagesPage here
                   _buildChatsTab(),
-                  AppsPage(teamId: widget.team.id, user: null),  // Pass teamId to AppsPage
+                  ServicesPage(teamId: widget.team.id, user: null),  // Pass teamId to ServicesPage
                   TeamProfilePage(
                     team: widget.team,
                     roles: snapshot.data!,
@@ -108,4 +108,3 @@ class _TeamPageState extends State<TeamPage> {
     );
   }
 }
-
