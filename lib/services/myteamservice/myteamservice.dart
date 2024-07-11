@@ -49,18 +49,18 @@ class MyTeamService extends Service {
 
   static final List<Action> _defaultActions = [
     Action(
-      id: 'myroles',
-      name: 'myroles',
-      title: 'My Roles',
-      description: 'My roles in team',
+      id: 'managemyroles',
+      name: 'ManageMyRoles',
+      title: 'Manage My Roles',
+      description: 'Manage my roles in team',
       permissions: ['serviceusers'],
       tags: [],
       data: {},
     ),
     Action(
-      id: 'teamroles',
-      name: 'teamroles',
-      title: 'Team Roles',
+      id: 'manageteamroles',
+      name: 'ManageTeamRoles',
+      title: 'Manage Team Roles',
       description: 'Manage team roles',
       permissions: ['serviceadmins'],
       tags: [],

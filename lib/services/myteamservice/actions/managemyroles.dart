@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:matchmatter/views/service_action_component.dart';
 
-class MyRolesAction extends ServiceActionComponent {
-  MyRolesAction({required String serviceId, required String actionName}) : super(serviceId: serviceId, actionName: actionName);
+class ManageMyRoles extends ServiceActionComponent {
+  ManageMyRoles({required String serviceId, required String actionId}) : super(serviceId: serviceId, actionId: actionId);
 
   @override
   Widget build(BuildContext context) {

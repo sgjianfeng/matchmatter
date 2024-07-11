@@ -166,7 +166,7 @@ class Team {
     await addRolePermissions(
       teamId: id,
       roleId: 'admins',
-      serviceId: service.id,
+      serviceId: service.getServiceId(), // 使用 combinedId
       permissionId: 'serviceadmins',
       approverId: service.creatorId,
       status: {'permissionRole': true},
@@ -176,7 +176,7 @@ class Team {
     await addRolePermissions(
       teamId: id,
       roleId: 'members',
-      serviceId: service.id,
+      serviceId: service.getServiceId(), // 使用 combinedId
       permissionId: 'serviceusers',
       approverId: service.creatorId,
       status: {'permissionRole': true},

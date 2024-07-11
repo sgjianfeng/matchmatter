@@ -244,7 +244,7 @@ class UserDatabaseService {
           if (!roleServices.containsKey(roleId)) {
             roleServices[roleId] = [];
           }
-          roleServices[roleId]!.add(serviceId);
+          roleServices[roleId]!.add(serviceId); // 这里的 serviceId 已经是 combinedId
         }
       }
 

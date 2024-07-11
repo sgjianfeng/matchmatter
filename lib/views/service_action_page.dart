@@ -18,13 +18,15 @@ class ServiceActionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actionBuilder = ServiceActionsRegistry.getActionBuilder(service.id, action.name);
+    String serviceId = service.getServiceId();
+    final actionBuilder =
+        ServiceActionsRegistry.getActionBuilder(serviceId, action.id);
     if (actionBuilder == null) {
       return Center(
-        child: Text('Action not found: ${service.id}/${action.name}'),
+        child: Text('Action not found: $serviceId/${action.id}'),
       );
     }
-    final actionContent = actionBuilder(service.id, action.name);
+    final actionContent = actionBuilder(serviceId, action.id);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

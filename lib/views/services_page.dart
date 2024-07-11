@@ -7,7 +7,7 @@ import 'package:matchmatter/data/user.dart';
 import 'package:matchmatter/data/action.dart' as mm;
 import 'package:matchmatter/views/service_action_page.dart';
 import 'package:matchmatter/views/services_list.dart';
-import 'package:matchmatter/views/service_action_list_page.dart'; // Import ServiceActionListPage
+import 'package:matchmatter/views/service_action_list_page.dart';
 import 'package:matchmatter/views/services_appbar.dart';
 import 'package:matchmatter/views/roles_list.dart';
 
@@ -30,9 +30,10 @@ class _ServicesPageState extends State<ServicesPage> {
   bool isLoading = true;
   late UserModel currentUser;
   Set<String> selectedRoles = {};
-  Service? selectedService; // 新增变量，用于保存选中的服务
-  mm.Action? selectedAction; // 新增变量，用于保存选中的操作
-  GlobalKey _menuKey = GlobalKey(); // 添加 GlobalKey
+  Service? selectedService;
+  mm.Action? selectedAction;
+  List<String> selectedRolesForAction = [];
+  GlobalKey _menuKey = GlobalKey();
 
   @override
   void initState() {
@@ -63,7 +64,6 @@ class _ServicesPageState extends State<ServicesPage> {
       setState(() {
         isLoading = false;
       });
-      // Handle user not logged in
     }
   }
 
@@ -82,7 +82,6 @@ class _ServicesPageState extends State<ServicesPage> {
         isLoading = false;
       });
 
-      // Print roles to check if they are fetched correctly
       print('User roles: ${roles.map((role) => role.name).toList()}');
     } catch (error) {
       print('Error fetching data: $error');
@@ -112,7 +111,7 @@ class _ServicesPageState extends State<ServicesPage> {
         id: roleId,
         name: roleId,
         teamId: widget.teamId,
-        data: {}, // Adjust this as per your data
+        data: {},
       );
     }).toList();
   }
@@ -147,7 +146,7 @@ class _ServicesPageState extends State<ServicesPage> {
     );
 
     setState(() {
-      services = updatedServices.whereType<Service>().toList(); // Filter out null values
+      services = updatedServices.whereType<Service>().toList();
     });
   }
 
@@ -201,13 +200,14 @@ class _ServicesPageState extends State<ServicesPage> {
   void _onServiceSelected(Service service) {
     setState(() {
       selectedService = service;
-      selectedAction = null; // Reset selectedAction when a new service is selected
+      selectedAction = null;
     });
   }
 
-  void _onActionSelected(mm.Action action) {
+  void _onActionSelected(mm.Action action, List<String> roleIds) {
     setState(() {
       selectedAction = action;
+      selectedRolesForAction = roleIds;
     });
   }
 
@@ -240,7 +240,7 @@ class _ServicesPageState extends State<ServicesPage> {
         onGroupIconPressed: () {
           _showCustomMenu(context);
         },
-        menuKey: _menuKey, // 将 GlobalKey 传递给 CustomAppBarForServices
+        menuKey: _menuKey,
       ),
       body: Column(
         children: [
@@ -251,8 +251,10 @@ class _ServicesPageState extends State<ServicesPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : selectedService != null
                     ? selectedAction != null
-                        ? ServiceActionPage(service: selectedService!, action: selectedAction!, teamId: widget.teamId, roles: selectedRoles.toList())
-                        : ServiceActionListPage(service: selectedService!, teamId: widget.teamId, onActionSelected: _onActionSelected)
+                        ? ServiceActionPage(service: selectedService!, action: selectedAction!, teamId: widget.teamId, roles: selectedRolesForAction)
+                        : ServiceActionListPage(service: selectedService!, teamId: widget.teamId, onActionSelected: (action, roleIds) {
+                            _onActionSelected(action, roleIds);
+                          })
                     : showRoles
                         ? RolesList(roles: roles)
                         : ServicesList(services: services, searchQuery: searchQuery, onServiceSelected: _onServiceSelected),
@@ -277,9 +279,5 @@ class _ServicesPageState extends State<ServicesPage> {
         },
       ),
     );
-  }
-
-  String truncateWithEllipsis(int cutoff, String myString) {
-    return (myString.length <= cutoff) ? myString : '${myString.substring(0, cutoff)}...';
   }
 }

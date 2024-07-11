@@ -8,7 +8,7 @@ enum PermissionTeamScope { ownerTeam, approvedTeam, all }
 
 // Class for Service
 class Service {
-  final String id; // unique id, small case, no space
+  final String id; // small case, no space, combined with owner team id to be unique
   final String type; // service, default is service
   final String status; // active, default is active
   final String name;
@@ -39,6 +39,10 @@ class Service {
     required this.actions,
     required this.data,
   }) : name = name ?? id;
+
+  String getServiceId() {
+    return '${id}_$ownerTeamId';
+  }
 
   factory Service.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -93,36 +97,31 @@ class Service {
     required OwnerTeamScope ownerTeamScope,
     List<String>? approvedOwnerTeamIds,
   }) async {
+    String docId = '${id}_$ownerTeamId';
     CollectionReference services = FirebaseFirestore.instance.collection('services');
 
     if (ownerTeamScope == OwnerTeamScope.sole) {
-      QuerySnapshot existingServices = await services.where('id', isEqualTo: id).get();
-      return existingServices.docs.isEmpty;
+      DocumentSnapshot existingService = await services.doc(id).get();
+      return !existingService.exists;
     } else if (ownerTeamScope == OwnerTeamScope.approved) {
       if (approvedOwnerTeamIds == null || !approvedOwnerTeamIds.contains(ownerTeamId)) {
         return false;
       }
-      QuerySnapshot existingServices = await services
-          .where('id', isEqualTo: id)
-          .where('ownerTeamId', isEqualTo: ownerTeamId)
-          .get();
-      return existingServices.docs.isEmpty;
+      DocumentSnapshot existingService = await services.doc(docId).get();
+      return !existingService.exists;
     } else if (ownerTeamScope == OwnerTeamScope.all) {
-      QuerySnapshot existingServices = await services
-          .where('id', isEqualTo: id)
-          .where('ownerTeamId', isEqualTo: ownerTeamId)
-          .get();
-      return existingServices.docs.isEmpty;
+      DocumentSnapshot existingService = await services.doc(docId).get();
+      return !existingService.exists;
     }
     return false;
   }
 
   Future<void> saveToFirestore() async {
-    await FirebaseFirestore.instance.collection('services').doc(id).set(toFirestore());
+    await FirebaseFirestore.instance.collection('services').doc(getServiceId()).set(toFirestore());
   }
 
-  static Future<Service?> getServiceData(String serviceId) async {
-    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('services').doc(serviceId).get();
+  static Future<Service?> getServiceData(String combinedId) async {
+    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('services').doc(combinedId).get();
     if (doc.exists) {
       return Service.fromFirestore(doc);
     }
@@ -221,7 +220,6 @@ Future<void> addRolePermissions({
   required Map<String, dynamic> status,
 }) async {
   CollectionReference roleServicePermissions = FirebaseFirestore.instance.collection('roleservicepermissions');
-
   QuerySnapshot existingPermissions = await roleServicePermissions
       .where('teamId', isEqualTo: teamId)
       .where('roleId', isEqualTo: roleId)
@@ -242,7 +240,7 @@ Future<void> addRolePermissions({
     await roleServicePermissions.add({
       'teamId': teamId,
       'roleId': roleId,
-      'serviceId': serviceId,
+      'serviceId': serviceId, // 这里使用 combinedId 作为 serviceId 的值
       'permissionId': permissionId,
       'joinedAt': Timestamp.now(),
       'approverId': approverId,
@@ -255,7 +253,7 @@ Future<void> addRolePermissions({
 Future<Map<String, List<Permission>>> getUserPermissionsInService({
   required String userId,
   required String teamId,
-  required String serviceId,
+  required String combinedId,
 }) async {
   try {
     List<String> userRoles = await UserDatabaseService.getUserRolesInTeam(teamId, userId);
@@ -266,7 +264,7 @@ Future<Map<String, List<Permission>>> getUserPermissionsInService({
           .collection('roleservicepermissions')
           .where('teamId', isEqualTo: teamId)
           .where('roleId', isEqualTo: roleId)
-          .where('serviceId', isEqualTo: serviceId)
+          .where('serviceId', isEqualTo: combinedId)
           .get();
 
       for (var doc in rolePermissionsSnapshot.docs) {

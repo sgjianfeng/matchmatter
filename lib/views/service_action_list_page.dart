@@ -1,5 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:matchmatter/data/service.dart';
 import 'package:matchmatter/data/user.dart';
 import 'package:matchmatter/data/action.dart' as mm; // Import with alias
@@ -8,7 +8,7 @@ import 'package:matchmatter/services/service_actions_registry.dart';
 class ServiceActionListPage extends StatefulWidget {
   final Service service;
   final String teamId;
-  final ValueChanged<mm.Action> onActionSelected; // Use alias here
+  final Function(mm.Action, List<String>) onActionSelected;
 
   ServiceActionListPage({
     required this.service,
@@ -27,13 +27,13 @@ class _ServiceActionListPageState extends State<ServiceActionListPage> {
   void initState() {
     super.initState();
     final userId = UserDatabaseService.getCurrentUserId();
-    ServiceActionsRegistry.registerAllForService(widget.service.id); // 注册当前 service 的所有 action
-    userActionsFuture = getUserActionsInService(userId: userId, teamId: widget.teamId, serviceId: widget.service.id);
+    ServiceActionsRegistry.registerAllForService(widget.service.getServiceId()); // 注册当前 service 的所有 action
+    userActionsFuture = getUserActionsInService(userId: userId, teamId: widget.teamId, serviceId: widget.service.getServiceId());
     _setServiceId();
   }
 
   Future<void> _setServiceId() async {
-    await UserDatabaseService(uid: FirebaseAuth.instance.currentUser?.uid).setServiceId(widget.service.id);
+    await UserDatabaseService(uid: FirebaseAuth.instance.currentUser?.uid).setServiceId(widget.service.getServiceId());
   }
 
   @override
@@ -48,7 +48,8 @@ class _ServiceActionListPageState extends State<ServiceActionListPage> {
         } else {
           final roleActions = snapshot.data!;
           final actionDefinitions = widget.service.actions.where((action) {
-            return roleActions.values.any((actions) => actions.contains(action));
+            return roleActions.values
+                .any((actions) => actions.any((a) => a.id == action.id));
           }).toList();
 
           return ListView.builder(
@@ -56,7 +57,7 @@ class _ServiceActionListPageState extends State<ServiceActionListPage> {
             itemBuilder: (context, index) {
               final actionDef = actionDefinitions[index];
               final roles = roleActions.entries
-                  .where((entry) => entry.value.contains(actionDef))
+                  .where((entry) => entry.value.any((a) => a.id == actionDef.id))
                   .map((entry) => entry.key)
                   .toList();
 
@@ -77,7 +78,7 @@ class _ServiceActionListPageState extends State<ServiceActionListPage> {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   trailing: Icon(Icons.arrow_forward),
-                  onTap: () => widget.onActionSelected(actionDef), // Use alias here
+                  onTap: () => widget.onActionSelected(actionDef, roles), // Pass roles to onActionSelected
                 ),
               );
             },
