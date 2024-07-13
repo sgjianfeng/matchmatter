@@ -19,8 +19,7 @@ class ServiceActionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String serviceId = service.getServiceId();
-    final actionBuilder =
-        ServiceActionsRegistry.getActionBuilder(serviceId, action.id);
+    final actionBuilder = ServiceActionsRegistry.getActionBuilder(serviceId, action.id);
     if (actionBuilder == null) {
       return Center(
         child: Text('Action not found: $serviceId/${action.id}'),
@@ -28,23 +27,30 @@ class ServiceActionPage extends StatelessWidget {
     }
     final actionContent = actionBuilder(serviceId, action.id);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${service.name}\nRoles: ${roles.join(', ')}',
-                style: TextStyle(fontSize: 16.0, color: Colors.grey),
-              ),
-            ],
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'service: ${service.name}',
+              style: TextStyle(fontSize: 14.0, color: Colors.grey),
+            ),
+            Text(
+              'action roles: ${roles.join(', ')}',
+              style: TextStyle(fontSize: 14.0, color: Colors.grey),
+            ),
+          ],
         ),
-        Expanded(child: actionContent),
-      ],
+        toolbarHeight: 36.0, // Reduce the height of the AppBar
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: actionContent),
+        ],
+      ),
     );
   }
 }

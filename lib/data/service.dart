@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:matchmatter/data/team.dart';
 import 'package:matchmatter/data/user.dart';
 import 'package:matchmatter/data/action.dart';
 
@@ -256,14 +257,14 @@ Future<Map<String, List<Permission>>> getUserPermissionsInService({
   required String combinedId,
 }) async {
   try {
-    List<String> userRoles = await UserDatabaseService.getUserRolesInTeam(teamId, userId);
+    List<RoleModel> userRoles = await UserDatabaseService.getUserRolesInTeam(teamId, userId);
     Map<String, List<Permission>> rolePermissions = {};
 
-    for (String roleId in userRoles) {
+    for (RoleModel role in userRoles) {
       QuerySnapshot rolePermissionsSnapshot = await FirebaseFirestore.instance
           .collection('roleservicepermissions')
           .where('teamId', isEqualTo: teamId)
-          .where('roleId', isEqualTo: roleId)
+          .where('roleId', isEqualTo: role.id)
           .where('serviceId', isEqualTo: combinedId)
           .get();
 
@@ -272,10 +273,10 @@ Future<Map<String, List<Permission>>> getUserPermissionsInService({
         DocumentSnapshot permissionDoc = await FirebaseFirestore.instance.collection('permissions').doc(permissionId).get();
         if (permissionDoc.exists) {
           Permission permission = Permission.fromMap(permissionDoc.data() as Map<String, dynamic>);
-          if (!rolePermissions.containsKey(roleId)) {
-            rolePermissions[roleId] = [];
+          if (!rolePermissions.containsKey(role.id)) {
+            rolePermissions[role.id] = [];
           }
-          rolePermissions[roleId]!.add(permission);
+          rolePermissions[role.id]!.add(permission);
         }
       }
     }
@@ -294,14 +295,14 @@ Future<Map<String, List<Action>>> getUserActionsInService({
   required String serviceId,
 }) async {
   try {
-    List<String> userRoles = await UserDatabaseService.getUserRolesInTeam(teamId, userId);
+    List<RoleModel> userRoles = await UserDatabaseService.getUserRolesInTeam(teamId, userId);
     Map<String, List<Action>> roleActions = {};
 
-    for (String roleId in userRoles) {
+    for (RoleModel role in userRoles) {
       QuerySnapshot rolePermissionsSnapshot = await FirebaseFirestore.instance
           .collection('roleservicepermissions')
           .where('teamId', isEqualTo: teamId)
-          .where('roleId', isEqualTo: roleId)
+          .where('roleId', isEqualTo: role.id)
           .where('serviceId', isEqualTo: serviceId)
           .get();
 
@@ -313,11 +314,11 @@ Future<Map<String, List<Action>>> getUserActionsInService({
         if (service != null) {
           for (var action in service.actions) {
             if (action.permissions.contains(permissionId)) {
-              if (!roleActions.containsKey(roleId)) {
-                roleActions[roleId] = [];
+              if (!roleActions.containsKey(role.id)) {
+                roleActions[role.id] = [];
               }
-              if (!roleActions[roleId]!.contains(action)) {
-                roleActions[roleId]!.add(action);
+              if (!roleActions[role.id]!.contains(action)) {
+                roleActions[role.id]!.add(action);
               }
             }
           }

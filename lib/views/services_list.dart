@@ -13,21 +13,26 @@ class ServicesList extends StatelessWidget {
     required this.onServiceSelected,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final filteredServices = services.where((service) {
-      final query = searchQuery.toLowerCase();
+  List<Service> _filterServices() {
+    final query = searchQuery.toLowerCase();
+    return services.where((service) {
       final serviceMatch = service.name.toLowerCase().contains(query);
       final permissionMatch = service.permissions.any((permission) =>
           permission.name.toLowerCase().contains(query) ||
           permission.data.toString().toLowerCase().contains(query));
       return serviceMatch || permissionMatch;
     }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredServices = _filterServices();
 
     return ListView.builder(
       itemCount: filteredServices.length,
       itemBuilder: (context, index) {
         final service = filteredServices[index];
+        final tileColor = _getTileColor(service); // 提前计算背景颜色
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
           child: Card(
@@ -40,9 +45,9 @@ class ServicesList extends StatelessWidget {
                 onServiceSelected(service);
               },
               child: ListTile(
-                tileColor: _getTileColor(service), // 设置背景颜色
+                tileColor: tileColor, // 设置背景颜色
                 title: Text(
-                  '${service.name} (${service.id})',
+                  service.name,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 subtitle: Text(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:matchmatter/data/team.dart';
+import 'package:matchmatter/data/user.dart';
 import 'package:matchmatter/views/new_team_page.dart';
 import 'package:matchmatter/views/team_page.dart';
 import 'dart:math';
@@ -13,7 +14,8 @@ class TeamsPage extends StatefulWidget {
   _TeamsPageState createState() => _TeamsPageState();
 }
 
-class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixin {
+class _TeamsPageState extends State<TeamsPage>
+    with AutomaticKeepAliveClientMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
@@ -62,32 +64,15 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
     );
   }
 
-  Stream<List<Team>> _loadUserTeamsStream() {
+  Stream<List<Team>> _loadUserTeamsStream() async* {
     if (currentUser == null) {
-      return Stream.value([]);
+      yield [];
+      return;
     }
 
-    return _firestore.collection('teams').snapshots().asyncMap((snapshot) async {
-      List<Team> userTeams = [];
-      for (var doc in snapshot.docs) {
-        var teamData = doc.data();
-        var rolesData = Map<String, List<dynamic>>.from(teamData['roles'] ?? {});
-
-        bool userInTeam = rolesData.entries.any((entry) => entry.value.contains(currentUser!.uid));
-        if (userInTeam) {
-          var team = Team(
-            id: doc.id,
-            name: teamData['name'] ?? 'Unknown Team',
-            description: teamData['description'],
-            createdAt: teamData['createdAt'] ?? Timestamp.now(),
-            tags: List<String>.from(teamData['tags'] ?? []),
-            roles: rolesData.map((key, value) => MapEntry(key, List<String>.from(value))),
-          );
-          userTeams.add(team);
-        }
-      }
-      return userTeams;
-    });
+    UserDatabaseService userService = UserDatabaseService(uid: currentUser!.uid);
+    List<Team> userTeams = await userService.getUserTeams();
+    yield userTeams;
   }
 
   void _navigateToTeamDetail(BuildContext context, Team team) {
@@ -138,7 +123,10 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
               padding: EdgeInsets.all(8.0),
               child: Text(
                 'Your Team List!',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -149,7 +137,8 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
-                    return Center(child: Text('Failed to load teams: ${snapshot.error}'));
+                    return Center(
+                        child: Text('Failed to load teams: ${snapshot.error}'));
                   } else if (snapshot.hasData) {
                     final teams = snapshot.data!;
                     if (teams.isEmpty) {
@@ -180,14 +169,20 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
                         itemCount: teams.length,
                         itemBuilder: (context, index) {
                           final team = teams[index];
-                          final teamMembers = Random().nextInt(11) + 10; // Random number between 10 and 20
-                          final teamInitial = team.name.isNotEmpty ? team.name[0].toUpperCase() : '?';
+                          final teamMembers = Random().nextInt(11) +
+                              10; // Random number between 10 and 20
+                          final teamInitial = team.name.isNotEmpty
+                              ? team.name[0].toUpperCase()
+                              : '?';
 
                           return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 5, horizontal: 10),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
-                              side: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
+                              side: BorderSide(
+                                  color: Colors.grey.withOpacity(0.2),
+                                  width: 1),
                             ),
                             elevation: 2,
                             color: Colors.grey[50],
@@ -203,12 +198,15 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      team.name.length > 20 ? '${team.name.substring(0, 20)}...' : team.name,
+                                      team.name.length > 20
+                                          ? '${team.name.substring(0, 20)}...'
+                                          : team.name,
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 1,
                                     ),
                                   ),
-                                  const Icon(Icons.verified, color: Colors.blue), // Add verified icon
+                                  const Icon(Icons.verified,
+                                      color: Colors.blue), // Add verified icon
                                 ],
                               ),
                               subtitle: Column(
@@ -235,7 +233,8 @@ class _TeamsPageState extends State<TeamsPage> with AutomaticKeepAliveClientMixi
                                 ],
                               ),
                               trailing: CircleAvatar(
-                                backgroundColor: _getBackgroundColor(teamMembers),
+                                backgroundColor:
+                                    _getBackgroundColor(teamMembers),
                                 child: Text(
                                   '$teamMembers',
                                   style: const TextStyle(color: Colors.white),

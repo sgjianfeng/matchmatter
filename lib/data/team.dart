@@ -54,7 +54,7 @@ class Team {
   final String? description;
   final Timestamp createdAt;
   List<String> tags;
-  Map<String, List<String>> roles;
+  List<RoleModel> roles;
 
   Team({
     required this.id,
@@ -65,34 +65,30 @@ class Team {
     required this.roles,
   });
 
-  Future<void> addMember(UserModel user, {required String role, required String approverId}) async {
-    roles.putIfAbsent(role, () => []);
-    if (!roles[role]!.contains(user.uid)) {
-      RoleModel roleModel = RoleModel(
-        id: role,
-        name: role,
-        teamId: id,
-        creatorId: approverId,
-        data: {},
-      );
+  Future<void> addMember(UserModel user,
+      {required String roleId, required String approverId}) async {
+    RoleModel? role = roles.firstWhere((role) => role.id == roleId,
+        orElse: () => RoleModel(id: roleId, teamId: id, data: {}));
 
-      bool approverIsRoleAdmin = await isRoleAdmin(roleModel, approverId);
-      if (!approverIsRoleAdmin) {
-        throw Exception('Approver does not have the admin role permission.');
-      }
-      roles[role]!.add(user.uid);
+    bool approverIsRoleAdmin = await isRoleAdmin(role, approverId);
+    if (!approverIsRoleAdmin) {
+      throw Exception('Approver does not have the admin role permission.');
     }
 
-    await _updateRolesInFirestore();
+    await _addUserRoleToFirestore(user.uid, roleId);
   }
 
-  Future<void> _updateRolesInFirestore() async {
-    DocumentReference teamRef = FirebaseFirestore.instance.collection('teams').doc(id);
-    await teamRef.update({'roles': roles});
+  Future<void> _addUserRoleToFirestore(String userId, String roleId) async {
+    DocumentReference userRoleRef =
+        FirebaseFirestore.instance.collection('userroles').doc();
+    await userRoleRef.set({
+      'userId': userId,
+      'roleId': roleId,
+      'teamId': id,
+    });
   }
 
   Future<void> saveToFirestore(String creatorId) async {
-    _ensureUniqueUsersInRoles();
     await _checkIfTeamExists();
 
     _initializeDefaultRoles(creatorId);
@@ -105,14 +101,9 @@ class Team {
     await _createDefaultServices(creatorId);
   }
 
-  void _ensureUniqueUsersInRoles() {
-    roles.forEach((role, userIds) {
-      roles[role] = userIds.toSet().toList();
-    });
-  }
-
   Future<void> _checkIfTeamExists() async {
-    final DocumentSnapshot teamSnapshot = await FirebaseFirestore.instance.collection('teams').doc(id).get();
+    final DocumentSnapshot teamSnapshot =
+        await FirebaseFirestore.instance.collection('teams').doc(id).get();
     if (teamSnapshot.exists) {
       print('Team with ID $id already exists.');
       return;
@@ -120,12 +111,15 @@ class Team {
   }
 
   void _initializeDefaultRoles(String creatorId) {
-    roles['admins'] = roles['admins'] ?? [];
-    roles['members'] = roles['members'] ?? [];
-    if (!roles['admins']!.contains(creatorId)) roles['admins']!.add(creatorId);
-    if (!roles['members']!.contains(creatorId)) {
-      roles['members']!.add(creatorId);
-    }
+    RoleModel? adminRole = roles.firstWhere((role) => role.id == 'admins',
+        orElse: () => RoleModel(id: 'admins', teamId: id, data: {}));
+    RoleModel? memberRole = roles.firstWhere((role) => role.id == 'members',
+        orElse: () => RoleModel(id: 'members', teamId: id, data: {}));
+
+    roles = [adminRole, memberRole];
+
+    _addUserRoleToFirestore(creatorId, 'admins');
+    _addUserRoleToFirestore(creatorId, 'members');
   }
 
   Future<void> _saveTeamToFirestore() async {
@@ -134,13 +128,12 @@ class Team {
       'name': name,
       'description': description,
       'tags': tags,
-      'roles': roles,
+      'roles': roles.map((role) => role.toMap()).toList(),
       'createdAt': createdAt,
     });
   }
 
   Future<void> _createDefaultServices(String creatorId) async {
-    // 创建 MyTeamService
     MyTeamService myTeamService = MyTeamService(
       ownerTeamId: id,
       creatorId: creatorId,
@@ -149,7 +142,6 @@ class Team {
     await myTeamService.saveToFirestore();
     await _assignServicePermissions(myTeamService);
 
-    // 如果 teamId 是 matchmatterteam，则创建 MatchMatterService
     if (id == 'matchmatterteam') {
       MatchMatterService matchMatterService = MatchMatterService(
         ownerTeamId: id,
@@ -162,21 +154,19 @@ class Team {
   }
 
   Future<void> _assignServicePermissions(Service service) async {
-    // Assign serviceadmins permission to admins role
     await addRolePermissions(
       teamId: id,
       roleId: 'admins',
-      serviceId: service.getServiceId(), // 使用 combinedId
+      serviceId: service.getServiceId(),
       permissionId: 'serviceadmins',
       approverId: service.creatorId,
       status: {'permissionRole': true},
     );
 
-    // Assign serviceusers permission to members role
     await addRolePermissions(
       teamId: id,
       roleId: 'members',
-      serviceId: service.getServiceId(), // 使用 combinedId
+      serviceId: service.getServiceId(),
       permissionId: 'serviceusers',
       approverId: service.creatorId,
       status: {'permissionRole': true},
@@ -204,14 +194,10 @@ class Team {
     }
   }
 
-  Future<void> addRoleAdmin(String adminId, String userId, String roleId) async {
-    RoleModel roleModel = RoleModel(
-      id: roleId,
-      name: roleId,
-      teamId: id,
-      creatorId: adminId,
-      data: {},
-    );
+  Future<void> addRoleAdmin(
+      String adminId, String userId, String roleId) async {
+    RoleModel roleModel = roles.firstWhere((role) => role.id == roleId,
+        orElse: () => RoleModel(id: roleId, teamId: id, data: {}));
 
     bool isAdmin = await isRoleAdmin(roleModel, adminId);
     if (!isAdmin) {
@@ -221,14 +207,10 @@ class Team {
     await _addRoleAdmin(userId, roleId);
   }
 
-  Future<void> removeRoleAdmin(String adminId, String userId, String roleId) async {
-    RoleModel roleModel = RoleModel(
-      id: roleId,
-      name: roleId,
-      teamId: id,
-      creatorId: adminId,
-      data: {},
-    );
+  Future<void> removeRoleAdmin(
+      String adminId, String userId, String roleId) async {
+    RoleModel roleModel = roles.firstWhere((role) => role.id == roleId,
+        orElse: () => RoleModel(id: roleId, teamId: id, data: {}));
 
     bool isAdmin = await isRoleAdmin(roleModel, adminId);
     if (!isAdmin) {
@@ -239,40 +221,22 @@ class Team {
   }
 
   Future<List<RoleModel>> getAllRoles() async {
-    List<RoleModel> allRoles = [];
-
-    for (String roleId in roles.keys) {
-      DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance.collection('roles').doc(roleId).get();
-
-      if (roleSnapshot.exists) {
-        Map<String, dynamic> roleData = roleSnapshot.data() as Map<String, dynamic>;
-        roleData['id'] = roleId;
-        roleData['name'] = roleData['name'] ?? roleId;
-        roleData['description'] = roleData['description'] ?? '';
-        RoleModel role = RoleModel.fromMap(roleData);
-        allRoles.add(role);
-      }
-    }
-
-    return allRoles;
+    return roles;
   }
 
   Future<List<RoleModel>> getUserRoles(String userId) async {
+    QuerySnapshot userRolesSnapshot = await FirebaseFirestore.instance
+        .collection('userroles')
+        .where('userId', isEqualTo: userId)
+        .where('teamId', isEqualTo: id)
+        .get();
+
     List<RoleModel> userRoles = [];
 
-    for (String roleId in roles.keys) {
-      if (roles[roleId]!.contains(userId)) {
-        DocumentSnapshot roleSnapshot = await FirebaseFirestore.instance.collection('roles').doc(roleId).get();
-
-        if (roleSnapshot.exists) {
-          Map<String, dynamic> roleData = roleSnapshot.data() as Map<String, dynamic>;
-          roleData['id'] = roleId;
-          roleData['name'] = roleData['name'] ?? roleId;
-          roleData['description'] = roleData['description'] ?? '';
-          RoleModel role = RoleModel.fromMap(roleData);
-          userRoles.add(role);
-        }
-      }
+    for (var doc in userRolesSnapshot.docs) {
+      String roleId = doc['roleId'];
+      RoleModel? role = roles.firstWhere((role) => role.id == roleId);
+      userRoles.add(role);
     }
 
     return userRoles;
@@ -280,17 +244,18 @@ class Team {
 
   @override
   String toString() {
-    return 'Team: $name, ID: $id, Description: $description, Created At: $createdAt, Tags: $tags, Roles: ${roles.keys.join(', ')}';
+    return 'Team: $name, ID: $id, Description: $description, Created At: $createdAt, Tags: $tags, Roles: ${roles.map((role) => role.name).join(', ')}';
   }
 
   static Future<Team> getTeamData(String teamId) async {
-    DocumentSnapshot<Map<String, dynamic>> docSnapshot = await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
+    DocumentSnapshot<Map<String, dynamic>> docSnapshot =
+        await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
     if (!docSnapshot.exists) {
       throw Exception('Team does not exist');
     }
 
     var data = docSnapshot.data()!;
-    var rolesData = data['roles'] ?? {};
+    var rolesData = data['roles'] ?? [];
 
     return Team(
       id: teamId,
@@ -298,20 +263,31 @@ class Team {
       description: data['description'] ?? 'No description available',
       createdAt: data['createdAt'] ?? Timestamp.now(),
       tags: data['tags']?.cast<String>() ?? [],
-      roles: rolesData.map((key, value) => MapEntry(key, List<String>.from(value))),
+      roles: List<RoleModel>.from(
+          rolesData.map((roleData) => RoleModel.fromMap(roleData))),
     );
   }
 
-  static Future<Map<String, List<UserModel>>> getTeamRoles(Map<String, List<String>> roles) async {
+  static Future<Map<String, List<UserModel>>> getTeamRoles(
+      List<RoleModel> roles) async {
     Map<String, List<UserModel>> rolesWithUsers = {};
 
-    for (var role in roles.entries) {
-      List<UserModel> users = await Future.wait(role.value.map((uid) async {
+    for (var role in roles) {
+      QuerySnapshot userRolesSnapshot = await FirebaseFirestore.instance
+          .collection('userroles')
+          .where('roleId', isEqualTo: role.id)
+          .where('teamId', isEqualTo: role.teamId)
+          .get();
+
+      List<UserModel> users =
+          await Future.wait(userRolesSnapshot.docs.map((doc) async {
+        String uid = doc['userId'];
         UserModel user = await UserDatabaseService(uid: uid).getUserData();
-        print("User fetched for role ${role.key}: ${user.email}");
+        print("User fetched for role ${role.name}: ${user.email}");
         return user;
       }));
-      rolesWithUsers[role.key] = users;
+
+      rolesWithUsers[role.id] = users;
     }
 
     return rolesWithUsers;

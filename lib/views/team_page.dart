@@ -18,21 +18,15 @@ class TeamPage extends StatefulWidget {
 }
 
 class _TeamPageState extends State<TeamPage> {
-  late Future<Map<String, List<UserModel>>> rolesFuture;
 
   @override
   void initState() {
     super.initState();
-    rolesFuture = _loadRoles();
     _setCurrentTeamId();
   }
 
   Future<void> _setCurrentTeamId() async {
     await UserDatabaseService(uid: FirebaseAuth.instance.currentUser?.uid).setTeamId(widget.team.id);
-  }
-
-  Future<Map<String, List<UserModel>>> _loadRoles() async {
-    return Team.getTeamRoles(widget.team.roles);
   }
 
   @override
@@ -59,29 +53,15 @@ class _TeamPageState extends State<TeamPage> {
             ],
           ),
         ),
-        body: FutureBuilder<Map<String, List<UserModel>>>(
-          future: rolesFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Failed to load roles: ${snapshot.error}'));
-            } else if (snapshot.hasData) {
-              return TabBarView(
-                children: [
-                  const TeamMessagesPage(),  // Use the TeamMessagesPage here
-                  _buildChatsTab(),
-                  ServicesPage(teamId: widget.team.id, user: null),  // Pass teamId to ServicesPage
-                  TeamProfilePage(
-                    team: widget.team,
-                    roles: snapshot.data!,
-                  ),
-                ],
-              );
-            } else {
-              return const Center(child: Text('No roles found'));
-            }
-          },
+        body: TabBarView(
+          children: [
+            const TeamMessagesPage(),  // Use the TeamMessagesPage here
+            _buildChatsTab(),
+            ServicesPage(teamId: widget.team.id, user: null),  // Pass teamId to ServicesPage
+            TeamProfilePage(
+              teamId: widget.team.id,
+            ),
+          ],
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: Provider.of<BottomNavigationProvider>(context).currentIndex,

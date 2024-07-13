@@ -33,10 +33,22 @@ class CreateTeamSummaryPage extends StatelessWidget {
       UserModel admin = await UserDatabaseService(uid: adminId).getUserData();
 
       // Create roles
-      var roles = {
-        'admins': [admin.uid],
-        'members': members.map((user) => user.uid).toSet().toList(),
-      };
+      List<RoleModel> roles = [
+        RoleModel(
+          id: 'admins',
+          name: 'admins',
+          teamId: teamId,
+          creatorId: admin.uid,
+          data: {'userIds': [admin.uid]},
+        ),
+        RoleModel(
+          id: 'members',
+          name: 'members',
+          teamId: teamId,
+          creatorId: admin.uid,
+          data: {'userIds': members.map((user) => user.uid).toSet().toList()},
+        ),
+      ];
 
       print('Roles before saving: $roles');
 

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:matchmatter/data/team.dart';
 
 class UserModel {
   final String uid;
@@ -198,28 +199,39 @@ class UserDatabaseService {
     }
   }
 
-  // Function to get user roles in a team
-  static Future<List<String>> getUserRolesInTeam(String teamId, String userId) async {
+  Future<List<Team>> getUserTeams() async {
+  QuerySnapshot userRolesSnapshot = await FirebaseFirestore.instance
+      .collection('userroles')
+      .where('userId', isEqualTo: uid)
+      .get();
+
+  Set<String> teamIds = userRolesSnapshot.docs
+      .map((doc) => doc['teamId'] as String)
+      .toSet(); // Use Set to remove duplicates
+
+  if (teamIds.isEmpty) {
+    return [];
+  }
+
+  List<Team> userTeams = [];
+  for (String teamId in teamIds) {
     try {
-      // Get the team document
-      DocumentSnapshot teamSnapshot = await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
-      if (!teamSnapshot.exists) {
-        throw Exception('Team does not exist');
-      }
+      Team team = await Team.getTeamData(teamId);
+      userTeams.add(team);
+    } catch (e) {
+      print('Error getting team data for teamId $teamId: $e');
+    }
+  }
 
-      // Get the roles data
-      Map<String, dynamic> teamData = teamSnapshot.data() as Map<String, dynamic>;
-      Map<String, List<dynamic>> roles = Map<String, List<dynamic>>.from(teamData['roles']);
+  return userTeams;
+}
 
-      // Find user roles
-      List<String> userRoles = [];
-      roles.forEach((role, userIds) {
-        if (userIds.contains(userId)) {
-          userRoles.add(role);
-        }
-      });
 
-      return userRoles;
+  // Function to get user roles in a team
+  static Future<List<RoleModel>> getUserRolesInTeam(String teamId, String userId) async {
+    try {
+      Team team = await Team.getTeamData(teamId);
+      return await team.getUserRoles(userId);
     } catch (e) {
       print('Error getting user roles in team: $e');
       throw Exception('Failed to get user roles in team');
@@ -229,22 +241,22 @@ class UserDatabaseService {
   // Function to get user services in a team
   static Future<Map<String, List<String>>> getUserServicesInTeam(String teamId, String userId) async {
     try {
-      List<String> userRoles = await getUserRolesInTeam(teamId, userId);
+      List<RoleModel> userRoles = await getUserRolesInTeam(teamId, userId);
       Map<String, List<String>> roleServices = {};
 
-      for (String roleId in userRoles) {
+      for (RoleModel role in userRoles) {
         QuerySnapshot roleServicesSnapshot = await FirebaseFirestore.instance
             .collection('roleservicepermissions')
             .where('teamId', isEqualTo: teamId)
-            .where('roleId', isEqualTo: roleId)
+            .where('roleId', isEqualTo: role.id)
             .get();
 
         for (var doc in roleServicesSnapshot.docs) {
           String serviceId = doc['serviceId'];
-          if (!roleServices.containsKey(roleId)) {
-            roleServices[roleId] = [];
+          if (!roleServices.containsKey(role.id)) {
+            roleServices[role.id] = [];
           }
-          roleServices[roleId]!.add(serviceId); // 这里的 serviceId 已经是 combinedId
+          roleServices[role.id]!.add(serviceId); // 这里的 serviceId 已经是 combinedId
         }
       }
 

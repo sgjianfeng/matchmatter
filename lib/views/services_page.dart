@@ -73,7 +73,7 @@ class _ServicesPageState extends State<ServicesPage> {
       final userServices = await UserDatabaseService.getUserServicesInTeam(widget.teamId, currentUser.uid);
 
       final services = await _mapUserServices(userServices);
-      final roles = _mapUserRoles(userRoles);
+      final roles = userRoles;
 
       setState(() {
         this.services = services;
@@ -103,17 +103,6 @@ class _ServicesPageState extends State<ServicesPage> {
     }
 
     return services;
-  }
-
-  List<RoleModel> _mapUserRoles(List<String> userRoles) {
-    return userRoles.map((roleId) {
-      return RoleModel(
-        id: roleId,
-        name: roleId,
-        teamId: widget.teamId,
-        data: {},
-      );
-    }).toList();
   }
 
   void _onRoleSelected(String roleId) {
