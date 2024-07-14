@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,8 +23,53 @@ class _TeamsPageState extends State<TeamsPage>
   @override
   bool get wantKeepAlive => true;
 
-  void _showNewTeamModal(BuildContext context) {
-    showModalBottomSheet(
+  List<Team> _currentTeams = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserTeams();
+  }
+
+  void _loadUserTeams() {
+    _fetchUserTeams().then((newTeams) {
+      if (!_areTeamsEqual(newTeams, _currentTeams)) {
+        setState(() {
+          _currentTeams = newTeams;
+        });
+      }
+    });
+  }
+
+  Future<List<Team>> _fetchUserTeams() async {
+    if (currentUser == null) {
+      return [];
+    }
+
+    UserDatabaseService userService = UserDatabaseService(uid: currentUser!.uid);
+    List<Team> userTeams = await userService.getUserTeams();
+    return userTeams;
+  }
+
+  bool _areTeamsEqual(List<Team> newTeams, List<Team> currentTeams) {
+    if (newTeams.length != currentTeams.length) {
+      return false;
+    }
+
+    for (int i = 0; i < newTeams.length; i++) {
+      if (newTeams[i].id != currentTeams[i].id ||
+          newTeams[i].name != currentTeams[i].name ||
+          newTeams[i].description != currentTeams[i].description ||
+          !listEquals(newTeams[i].tags, currentTeams[i].tags)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  void _showNewTeamModal(BuildContext context) async {
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (BuildContext context) => const Padding(
@@ -32,6 +78,7 @@ class _TeamsPageState extends State<TeamsPage>
       ),
       backgroundColor: Colors.transparent,
     );
+    _loadUserTeams();
   }
 
   PopupMenuButton<String> _buildPopupMenu(BuildContext context) {
@@ -64,23 +111,13 @@ class _TeamsPageState extends State<TeamsPage>
     );
   }
 
-  Stream<List<Team>> _loadUserTeamsStream() async* {
-    if (currentUser == null) {
-      yield [];
-      return;
-    }
-
-    UserDatabaseService userService = UserDatabaseService(uid: currentUser!.uid);
-    List<Team> userTeams = await userService.getUserTeams();
-    yield userTeams;
-  }
-
-  void _navigateToTeamDetail(BuildContext context, Team team) {
-    Navigator.of(context).push(
+  void _navigateToTeamDetail(BuildContext context, Team team) async {
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => TeamPage(team: team),
       ),
     );
+    _loadUserTeams();
   }
 
   Color _getBackgroundColor(int teamMembers) {
@@ -131,128 +168,109 @@ class _TeamsPageState extends State<TeamsPage>
               ),
             ),
             Expanded(
-              child: StreamBuilder<List<Team>>(
-                stream: _loadUserTeamsStream(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(
-                        child: Text('Failed to load teams: ${snapshot.error}'));
-                  } else if (snapshot.hasData) {
-                    final teams = snapshot.data!;
-                    if (teams.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('You have not joined any teams yet.'),
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: () {
-                                _showNewTeamModal(context);
-                              },
-                              child: const Text('Create a Team'),
-                            ),
-                            const SizedBox(height: 10),
-                            ElevatedButton(
-                              onPressed: () {
-                                // Navigate to a page to join a team
-                              },
-                              child: const Text('Join a Team'),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else {
-                      return ListView.builder(
-                        itemCount: teams.length,
-                        itemBuilder: (context, index) {
-                          final team = teams[index];
-                          final teamMembers = Random().nextInt(11) +
-                              10; // Random number between 10 and 20
-                          final teamInitial = team.name.isNotEmpty
-                              ? team.name[0].toUpperCase()
-                              : '?';
+              child: _currentTeams.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('You have not joined any teams yet.'),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: () {
+                              _showNewTeamModal(context);
+                            },
+                            child: const Text('Create a Team'),
+                          ),
+                          const SizedBox(height: 10),
+                          ElevatedButton(
+                            onPressed: () {
+                              // Navigate to a page to join a team
+                            },
+                            child: const Text('Join a Team'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _currentTeams.length,
+                      itemBuilder: (context, index) {
+                        final team = _currentTeams[index];
+                        final teamMembers = Random().nextInt(11) +
+                            10; // Random number between 10 and 20
+                        final teamInitial = team.name.isNotEmpty
+                            ? team.name[0].toUpperCase()
+                            : '?';
 
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 5, horizontal: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              side: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 1),
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 5, horizontal: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                                color: Colors.grey.withOpacity(0.2), width: 1),
+                          ),
+                          elevation: 2,
+                          color: Colors.grey[50],
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.blue,
+                              child: Text(
+                                teamInitial,
+                                style: const TextStyle(color: Colors.white),
+                              ),
                             ),
-                            elevation: 2,
-                            color: Colors.grey[50],
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.blue,
-                                child: Text(
-                                  teamInitial,
-                                  style: const TextStyle(color: Colors.white),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    team.name.length > 20
+                                        ? '${team.name.substring(0, 20)}...'
+                                        : team.name,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
                                 ),
-                              ),
-                              title: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      team.name.length > 20
-                                          ? '${team.name.substring(0, 20)}...'
-                                          : team.name,
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                  const Icon(Icons.verified,
-                                      color: Colors.blue), // Add verified icon
-                                ],
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    team.name,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                    style: TextStyle(color: Colors.grey[700]),
-                                  ),
-                                  Text(
-                                    'tags: ${team.tags.join(', ')}',
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                    style: TextStyle(color: Colors.grey[500]),
-                                  ),
-                                  Text(
-                                    team.description ?? '',
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                    style: TextStyle(color: Colors.grey[500]),
-                                  ),
-                                ],
-                              ),
-                              trailing: CircleAvatar(
-                                backgroundColor:
-                                    _getBackgroundColor(teamMembers),
-                                child: Text(
-                                  '$teamMembers',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ),
-                              onTap: () {
-                                _navigateToTeamDetail(context, team);
-                              },
+                                const Icon(Icons.verified,
+                                    color: Colors.blue), // Add verified icon
+                              ],
                             ),
-                          );
-                        },
-                      );
-                    }
-                  } else {
-                    return const Center(child: Text('No teams found'));
-                  }
-                },
-              ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  team.name,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: TextStyle(color: Colors.grey[700]),
+                                ),
+                                Text(
+                                  'tags: ${team.tags.join(', ')}',
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: TextStyle(color: Colors.grey[500]),
+                                ),
+                                Text(
+                                  team.description ?? '',
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: TextStyle(color: Colors.grey[500]),
+                                ),
+                              ],
+                            ),
+                            trailing: CircleAvatar(
+                              backgroundColor: _getBackgroundColor(teamMembers),
+                              child: Text(
+                                '$teamMembers',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            onTap: () {
+                              _navigateToTeamDetail(context, team);
+                            },
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

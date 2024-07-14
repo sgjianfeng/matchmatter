@@ -8,7 +8,7 @@ class ManageTeamRoles extends ServiceActionComponent {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Text('This is the My Roles action for $serviceId.'),
+        child: Text('This is the Team Roles action for $serviceId.'),
       ),
     );
   }

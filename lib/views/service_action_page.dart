@@ -27,19 +27,24 @@ class ServiceActionPage extends StatelessWidget {
     }
     final actionContent = actionBuilder(serviceId, action.id);
 
+    String serviceName = service.name.length > 12 ? '${service.name.substring(0, 12)}...' : service.name;
+    String rolesString = roles.join(', ').length > 12 ? '${roles.join(', ').substring(0, 12)}...' : roles.join(', ');
+
+    String displayText = '$serviceName($rolesString)';
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'service: ${service.name}',
-              style: TextStyle(fontSize: 14.0, color: Colors.grey),
-            ),
-            Text(
-              'action roles: ${roles.join(', ')}',
-              style: TextStyle(fontSize: 14.0, color: Colors.grey),
+            Spacer(), // This pushes the text to the right
+            Tooltip(
+              message: '${service.name}(${roles.join(', ')})',
+              child: Text(
+                displayText,
+                style: TextStyle(fontSize: 14.0, color: Colors.grey),
+              ),
             ),
           ],
         ),
